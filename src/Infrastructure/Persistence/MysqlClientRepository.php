@@ -118,12 +118,13 @@ class MysqlClientRepository implements ClientRepositoryInterface {
             $estado = $client->estado !== null ? (int)$client->estado : "NULL";
             $fecha_creacion = $client->fecha_creacion !== null ? "'" . mysqli_real_escape_string($this->db, $client->fecha_creacion) . "'" : "NULL";
             $fecha_actualizacion = $client->fecha_actualizacion !== null ? "'" . mysqli_real_escape_string($this->db, $client->fecha_actualizacion) . "'" : "NULL";
+            $posponer_hasta = (isset($client->posponer_hasta) && $client->posponer_hasta !== null) ? "'" . mysqli_real_escape_string($this->db, $client->posponer_hasta) . "'" : "NULL";
 
             if (empty($client->id)) {
                 // INSERT
                 $sql = "INSERT INTO `biartet_clientes` 
-                    (`identificador_unico`, `telefono`, `nombre`, `direccion`, `estado_id`, `municipio_id`, `ciudad_id`, `archivo_adjunto`, `estado_llamada`, `observacion`, `lapso_tiempo`, `lapso_dias`, `estado`, `fecha_creacion`, `fecha_actualizacion`) 
-                    VALUES ($identificador_unico, $telefono, $nombre, $direccion, $estado_id, $municipio_id, $ciudad_id, $archivo_adjunto, $estado_llamada, $observacion, $lapso_tiempo, $lapso_dias, $estado, $fecha_creacion, $fecha_actualizacion)";
+                    (`identificador_unico`, `telefono`, `nombre`, `direccion`, `estado_id`, `municipio_id`, `ciudad_id`, `archivo_adjunto`, `estado_llamada`, `observacion`, `lapso_tiempo`, `lapso_dias`, `estado`, `fecha_creacion`, `fecha_actualizacion`, `posponer_hasta`) 
+                    VALUES ($identificador_unico, $telefono, $nombre, $direccion, $estado_id, $municipio_id, $ciudad_id, $archivo_adjunto, $estado_llamada, $observacion, $lapso_tiempo, $lapso_dias, $estado, $fecha_creacion, $fecha_actualizacion, $posponer_hasta)";
                 return (bool)mysqli_query($this->db, $sql);
             } else {
                 // UPDATE
@@ -140,7 +141,8 @@ class MysqlClientRepository implements ClientRepositoryInterface {
                     `observacion` = $observacion, 
                     `lapso_tiempo` = $lapso_tiempo, 
                     `lapso_dias` = $lapso_dias, 
-                    `fecha_actualizacion` = $fecha_actualizacion 
+                    `fecha_actualizacion` = $fecha_actualizacion,
+                    `posponer_hasta` = $posponer_hasta 
                     WHERE `id` = $id";
                 return (bool)mysqli_query($this->db, $sql);
             }
@@ -307,7 +309,29 @@ class MysqlClientRepository implements ClientRepositoryInterface {
             $row['lapso_dias'],
             $row['estado'],
             $row['fecha_creacion'],
-            $row['fecha_actualizacion']
+            $row['fecha_actualizacion'],
+            isset($row['posponer_hasta']) ? $row['posponer_hasta'] : null
         );
+    }
+
+    public function snoozeAlarm($identifier, $minutes) {
+        try {
+            $identifier_escaped = mysqli_real_escape_string($this->db, $identifier);
+            $minutes_escaped = (int)$minutes;
+            $sql = "UPDATE `biartet_clientes` SET `posponer_hasta` = DATE_ADD(NOW(), INTERVAL $minutes_escaped MINUTE), `fecha_actualizacion` = NOW() WHERE `identificador_unico` = '$identifier_escaped'";
+            return (bool)mysqli_query($this->db, $sql);
+        } catch (Exception $e) {
+            return false;
+        }
+    }
+
+    public function clearAlarm($identifier) {
+        try {
+            $identifier_escaped = mysqli_real_escape_string($this->db, $identifier);
+            $sql = "UPDATE `biartet_clientes` SET `lapso_tiempo` = '', `posponer_hasta` = NULL, `fecha_actualizacion` = NOW() WHERE `identificador_unico` = '$identifier_escaped'";
+            return (bool)mysqli_query($this->db, $sql);
+        } catch (Exception $e) {
+            return false;
+        }
     }
 }

@@ -43,4 +43,3 @@ ALTER TABLE `biartet_clientes` ADD COLUMN `estado_id` INT NULL AFTER `direccion`
 ALTER TABLE `biartet_clientes` ADD COLUMN `municipio_id` INT NULL AFTER `estado_id`;
 ALTER TABLE `biartet_clientes` ADD COLUMN `ciudad_id` INT NULL AFTER `municipio_id`;
 ALTER TABLE `biartet_clientes` ADD COLUMN `archivo_adjunto` VARCHAR(255) NULL AFTER `ciudad_id`;
-ALTER TABLE `biartet_clientes` ADD COLUMN `posponer_hasta` DATETIME NULL AFTER `fecha_actualizacion`;

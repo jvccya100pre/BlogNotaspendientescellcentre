@@ -20,6 +20,7 @@ class Client {
     public $estado; // 1 for active, 0 for inactive
     public $fecha_creacion;
     public $fecha_actualizacion;
+    public $posponer_hasta;
 
     public function __construct(
         $id,
@@ -37,7 +38,8 @@ class Client {
         $lapso_dias,
         $estado,
         $fecha_creacion,
-        $fecha_actualizacion
+        $fecha_actualizacion,
+        $posponer_hasta = null
     ) {
         $this->id = $id;
         $this->identificador_unico = $identificador_unico;
@@ -55,6 +57,7 @@ class Client {
         $this->estado = $estado;
         $this->fecha_creacion = $fecha_creacion;
         $this->fecha_actualizacion = $fecha_actualizacion;
+        $this->posponer_hasta = $posponer_hasta;
     }
 
     /**

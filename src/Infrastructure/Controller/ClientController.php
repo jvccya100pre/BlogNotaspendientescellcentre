@@ -312,6 +312,42 @@ class ClientController {
     }
 
     /**
+     * AJAX endpoint to snooze or delete alarm (Paso de Alarma)
+     */
+    public function handleAlarmAction() {
+        $this->checkAuth();
+
+        $action = isset($_REQUEST['action']) ? $_REQUEST['action'] : '';
+        $id_unico = isset($_REQUEST['id_unico']) ? trim($_REQUEST['id_unico']) : '';
+        $minutes = isset($_REQUEST['minutes']) ? (int)$_REQUEST['minutes'] : 0;
+
+        if (empty($id_unico)) {
+            header('Content-Type: application/json');
+            header('HTTP/1.0 400 Bad Request');
+            echo json_encode(array('status' => 'error', 'message' => 'Identificador único requerido.'));
+            exit();
+        }
+
+        $repo = new MysqlClientRepository();
+        $success = false;
+
+        if ($action === 'snooze') {
+            $success = $repo->snoozeAlarm($id_unico, $minutes);
+        } else if ($action === 'delete') {
+            $success = $repo->clearAlarm($id_unico);
+        }
+
+        header('Content-Type: application/json');
+        if ($success) {
+            echo json_encode(array('status' => 'success', 'message' => 'Acción ejecutada con éxito.'));
+        } else {
+            header('HTTP/1.0 500 Internal Server Error');
+            echo json_encode(array('status' => 'error', 'message' => 'Error al actualizar alarma en base de datos.'));
+        }
+        exit();
+    }
+
+    /**
      * Render view with layout
      */
     private function render($viewName, $data = array()) {

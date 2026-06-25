@@ -4,7 +4,16 @@
             <h1 class="gradient-text" style="margin-bottom:0.25rem;">Panel de Clientes</h1>
             <p style="font-size:0.9rem; color:rgba(255,255,255,0.6);">Gestión de llamadas y seguimiento de pendientes</p>
         </div>
-        <div style="display:flex; gap:1rem;">
+        <div style="display:flex; gap:1rem; align-items:center;">
+            <!-- Alarm bell trigger button -->
+            <button type="button" id="btn_alarm_bell" class="btn btn-secondary" style="position:relative; display: inline-flex; align-items: center; justify-content: center; width: 42px; height: 42px; padding: 0; border-radius: 50%; cursor: pointer; transition: all 0.3s ease; transform-origin: 50% 0%;">
+                <svg id="bell_icon_svg" style="width:24px;height:24px;fill:currentColor;" viewBox="0 0 24 24">
+                    <path d="M12,2A3,3 0 0,0 9,5V5.28C6.1,6.46 4,9.45 4,13V19L2,21V22H22V21L20,19V13C20,9.45 17.9,6.46 15,5.28V5A3,3 0 0,0 12,2M12,24A3,3 0 0,0 15,21H9A3,3 0 0,0 12,24Z" />
+                </svg>
+                <!-- Alarm count badge -->
+                <span id="alarm_badge" style="display:none; position:absolute; top:-4px; right:-4px; background:#ef4444; color:#fff; border-radius:50%; width:20px; height:20px; font-size:0.75rem; font-weight:bold; align-items:center; justify-content:center; border:2px solid #1a1a1a; line-height:1;">0</span>
+            </button>
+
             <!-- Exito pedido pendiente Button (Paso 9) -->
             <button type="button" id="btn_exito_pedido" class="btn btn-highlight" style="display: inline-flex; align-items: center; gap: 0.5rem;">
                 <svg style="width:20px;height:20px;fill:currentColor" viewBox="0 0 24 24">
@@ -99,6 +108,8 @@
                     ?>
                         <tr data-fecha-creacion="<?php echo date('Y-m-d', strtotime($c->fecha_creacion)); ?>" 
                             data-fecha-creacion-full="<?php echo date('Y-m-d H:i:s', strtotime($c->fecha_creacion)); ?>" 
+                            data-fecha-creacion-timestamp="<?php echo strtotime($c->fecha_creacion); ?>" 
+                            data-posponer-hasta-timestamp="<?php echo !empty($c->posponer_hasta) ? strtotime($c->posponer_hasta) : 0; ?>" 
                             data-lapso-tiempo="<?php echo htmlspecialchars($c->lapso_tiempo); ?>" 
                             data-nombre="<?php echo htmlspecialchars($c->nombre); ?>" 
                             data-id-unico="<?php echo htmlspecialchars($c->identificador_unico); ?>" 
@@ -287,23 +298,29 @@
     </div>
 </div>
 
-<!-- Alarm Notification Popup Banner (Paso 8 y 15) -->
-<div id="alarmOverlay" class="modal-overlay" style="display:none; position:fixed; top:20px; right:20px; z-index:9999; width:350px; pointer-events:auto;">
-    <div class="glass-card" style="padding:1.5rem; border:1px solid #ef4444; box-shadow: 0 10px 30px rgba(239,68,68,0.25); border-radius:12px; background: rgba(30, 8, 9, 0.95); margin-bottom:0;">
-        <div style="display:flex; align-items:center; gap:0.75rem; margin-bottom:1rem;">
-            <svg class="alarm-bell-icon" style="width:28px;height:28px;fill:#ef4444;" viewBox="0 0 24 24">
+<!-- Alarm Notification Centralized Modal (Paso 8, 15 y modificaciones) -->
+<div id="alarmOverlay" class="modal-overlay" style="display:none; position:fixed; top:0; left:0; width:100%; height:100%; background:rgba(0,0,0,0.85); z-index:9999; justify-content:center; align-items:center; backdrop-filter:blur(8px); -webkit-backdrop-filter:blur(8px);">
+    <div class="glass-card" style="padding:2rem; border:1px solid #ef4444; box-shadow: 0 10px 35px rgba(239,68,68,0.3); border-radius:16px; background: rgba(30, 8, 9, 0.98); margin-bottom:0; width:95%; max-width:500px; position:relative; pointer-events:auto;">
+        <!-- Close Button (X) -->
+        <button id="closeAlarmModal" style="position:absolute; top:1.25rem; right:1.25rem; background:none; border:none; color:rgba(255,255,255,0.5); font-size:1.5rem; cursor:pointer; line-height:1; transition:color 0.2s;" onmouseover="this.style.color='#ef4444'" onmouseout="this.style.color='rgba(255,255,255,0.5)'">&times;</button>
+        
+        <div style="display:flex; align-items:center; gap:1rem; margin-bottom:1.5rem;">
+            <svg class="alarm-bell-icon" style="width:36px;height:36px;fill:#ef4444;" viewBox="0 0 24 24">
                 <path d="M12,2A3,3 0 0,0 9,5V5.28C6.1,6.46 4,9.45 4,13V19L2,21V22H22V21L20,19V13C20,9.45 17.9,6.46 15,5.28V5A3,3 0 0,0 12,2M12,24A3,3 0 0,0 15,21H9A3,3 0 0,0 12,24Z" />
             </svg>
             <div>
-                <h4 style="margin:0; color:#ef4444; font-size:1.1rem; font-weight:700;">Lapsos Cumplidos</h4>
-                <p style="margin:0; font-size:0.8rem; color:rgba(255,255,255,0.6);">Alarma de llamadas vencidas</p>
+                <h4 style="margin:0; color:#ef4444; font-size:1.3rem; font-weight:700;">Lapsos Cumplidos</h4>
+                <p style="margin:0; font-size:0.9rem; color:rgba(255,255,255,0.6);">Alarma de llamadas vencidas</p>
             </div>
         </div>
-        <div id="alarmList" style="max-height:150px; overflow-y:auto; font-size:0.85rem; margin-bottom:1.2rem; text-align:left; color:rgba(255,255,255,0.95); border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:0.5rem;">
+        <div id="alarmList" style="max-height:250px; overflow-y:auto; font-size:0.95rem; margin-bottom:1.5rem; text-align:left; color:rgba(255,255,255,0.95); border-bottom:1px solid rgba(255,255,255,0.1); padding-bottom:1rem;">
             <!-- Triggered alarm items injected here -->
         </div>
-        <button id="silenceAlarmBtn" class="btn btn-danger" style="width:100%; padding:0.5rem; font-size:0.9rem;">
-            <span>Silenciar Alarma</span>
+        <button id="silenceAlarmBtn" class="btn btn-danger" style="width:100%; padding:0.75rem; font-size:1rem; font-weight:600; display:flex; justify-content:center; align-items:center; gap:0.5rem;">
+            <svg style="width:20px;height:20px;fill:currentColor" viewBox="0 0 24 24">
+                <path d="M12,2a10,10 0 1,1 10,10A10,10 0 0,1 12,2m0,2a8,8 0 1,0 8,8A8,8 0 0,0 12,4m-1,8H7v-2h4V6h2v4h4v2h-4v4h-2V12Z"/>
+            </svg>
+            <span>Silenciar Todas las Alarmas</span>
         </button>
     </div>
 </div>
@@ -482,15 +499,91 @@
     // ----------------------------------------------------
     // 3. Audio Alarm System (Paso 8 y 15)
     // ----------------------------------------------------
-    var alarmAudio = new Audio('alarma/alarma.mp3');
+    var APP_BASE_URL = '<?php echo rtrim(str_replace(DIRECTORY_SEPARATOR, "/", dirname($_SERVER["SCRIPT_NAME"])), "/") . "/"; ?>';
+    var alarmAudio = new Audio(APP_BASE_URL + 'alarma/alarma.mp3');
     alarmAudio.loop = true;
     var alarmOverlay = document.getElementById('alarmOverlay');
     var alarmList = document.getElementById('alarmList');
     var silenceBtn = document.getElementById('silenceAlarmBtn');
     
+    // New DOM elements
+    var bellBtn = document.getElementById('btn_alarm_bell');
+    var alarmBadge = document.getElementById('alarm_badge');
+    var closeAlarmBtn = document.getElementById('closeAlarmModal');
+    
     // Track ID of clients that have been manually silenced during the session
     var silencedClientIds = {};
+    var dismissedClientIds = {};
     var isAlarmSounding = false;
+
+    // Unlock audio context on first user click/interaction to bypass autoplay policies
+    var audioUnlocked = false;
+    function unlockAudio() {
+        if (audioUnlocked) return;
+        
+        var playPromise = alarmAudio.play();
+        if (playPromise !== undefined) {
+            playPromise.then(function() {
+                alarmAudio.pause();
+                alarmAudio.currentTime = 0;
+                audioUnlocked = true;
+                console.log("Audio channel unlocked!");
+                checkAlarms(); // Trigger immediate check to start the sound if needed
+            }).catch(function(e) {
+                console.log("Audio unlock failed, will try again: ", e);
+            });
+        } else {
+            alarmAudio.pause();
+            audioUnlocked = true;
+            checkAlarms();
+        }
+        
+        document.removeEventListener('click', unlockAudio);
+        document.removeEventListener('keydown', unlockAudio);
+    }
+    document.addEventListener('click', unlockAudio);
+    document.addEventListener('keydown', unlockAudio);
+
+    window.triggerAlarmAction = function(action, idUnico, minutes) {
+        // Stop sound immediately for this item (optimistic feedback)
+        silencedClientIds[idUnico] = true;
+        checkAlarms();
+        
+        var url = APP_BASE_URL + 'api/alarms/action?action=' + action + '&id_unico=' + encodeURIComponent(idUnico) + '&minutes=' + (minutes || 0);
+        
+        fetch(url)
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                if (data.status === 'success') {
+                    // Update table row attributes dynamically
+                    var row = document.querySelector('tr[data-id-unico="' + idUnico + '"]');
+                    if (row) {
+                        if (action === 'snooze') {
+                            var snoozeMinutes = parseInt(minutes, 10);
+                            var futureTimeSeconds = Math.floor(Date.now() / 1000) + (snoozeMinutes * 60);
+                            row.setAttribute('data-posponer-hasta-timestamp', futureTimeSeconds);
+                        } else if (action === 'delete') {
+                            row.setAttribute('data-lapso-tiempo', '');
+                        }
+                    }
+                    // Remove from silenced list as the new state is saved in the DOM
+                    delete silencedClientIds[idUnico];
+                    delete dismissedClientIds[idUnico];
+                } else {
+                    alert('Error: ' + (data.message || 'No se pudo realizar la acción.'));
+                    delete silencedClientIds[idUnico]; // restore state
+                    delete dismissedClientIds[idUnico];
+                }
+                checkAlarms(); // Full recalculation
+            })
+            .catch(function(err) {
+                console.error(err);
+                alert('Error de conexión al servidor.');
+                delete silencedClientIds[idUnico];
+                delete dismissedClientIds[idUnico];
+                checkAlarms();
+            });
+    };
 
     function parseLapsoTiempo(str) {
         if (!str) return 0;
@@ -512,7 +605,7 @@
 
     function checkAlarms() {
         var rows = document.querySelectorAll('.clients-table tbody tr');
-        var now = Date.now();
+        var nowSeconds = Math.floor(Date.now() / 1000);
         var triggeredAlarms = [];
         var soundShouldPlay = false;
 
@@ -521,18 +614,27 @@
             var nombre = row.getAttribute('data-nombre');
             var status = row.getAttribute('data-status');
             var lapsoStr = row.getAttribute('data-lapso-tiempo');
-            var creationStr = row.getAttribute('data-fecha-creacion-full');
 
-            if (status !== 'Pendiente' || !lapsoStr || !creationStr) return;
+            if (status !== 'Pendiente' || !lapsoStr) return;
 
             var hours = parseLapsoTiempo(lapsoStr);
             if (hours === 0) return;
 
-            // Compute target due time
-            var creationTime = new Date(creationStr.replace(' ', 'T')).getTime();
-            var dueTime = creationTime + (hours * 3600 * 1000);
+            var creationTimestamp = parseInt(row.getAttribute('data-fecha-creacion-timestamp'), 10);
+            var posponerHastaTimestamp = parseInt(row.getAttribute('data-posponer-hasta-timestamp'), 10);
 
-            if (now >= dueTime) {
+            if (isNaN(creationTimestamp)) {
+                var creationStr = row.getAttribute('data-fecha-creacion-full');
+                if (!creationStr) return;
+                creationTimestamp = Math.floor(new Date(creationStr.replace(' ', 'T')).getTime() / 1000);
+            }
+            if (isNaN(posponerHastaTimestamp)) {
+                posponerHastaTimestamp = 0;
+            }
+
+            var dueTimestamp = creationTimestamp + (hours * 3600);
+
+            if (nowSeconds >= dueTimestamp && (posponerHastaTimestamp === 0 || nowSeconds >= posponerHastaTimestamp)) {
                 triggeredAlarms.push({ id: idUnico, name: nombre, limit: lapsoStr });
                 
                 // If it hasn't been silenced, trigger sound
@@ -542,58 +644,170 @@
             }
         });
 
+        // Update Alarm bell badge and ring animation
+        if (triggeredAlarms.length > 0) {
+            if (alarmBadge) {
+                alarmBadge.textContent = triggeredAlarms.length;
+                alarmBadge.style.display = 'inline-flex';
+            }
+            if (soundShouldPlay && bellBtn) {
+                bellBtn.style.animation = 'ring 2s ease infinite';
+                bellBtn.style.borderColor = '#ef4444';
+                bellBtn.style.background = 'rgba(239, 68, 68, 0.15)';
+                bellBtn.style.color = '#ef4444';
+            } else if (bellBtn) {
+                bellBtn.style.animation = 'none';
+                bellBtn.style.borderColor = 'rgba(255,255,255,0.15)';
+                bellBtn.style.background = 'rgba(255,255,255,0.05)';
+                bellBtn.style.color = '#fff';
+            }
+        } else {
+            if (alarmBadge) {
+                alarmBadge.style.display = 'none';
+                alarmBadge.textContent = '0';
+            }
+            if (bellBtn) {
+                bellBtn.style.animation = 'none';
+                bellBtn.style.borderColor = 'rgba(255,255,255,0.15)';
+                bellBtn.style.background = 'rgba(255,255,255,0.05)';
+                bellBtn.style.color = '#fff';
+            }
+        }
+
         // Update Alarm overlay display
         if (triggeredAlarms.length > 0) {
             alarmList.innerHTML = '';
             triggeredAlarms.forEach(function(item) {
                 var isSilenced = silencedClientIds[item.id];
                 var badgeText = isSilenced ? ' <span style="font-size:0.75rem; color:#888; margin-left:0.5rem;">(Silenciado)</span>' : '';
-                alarmList.innerHTML += '<div style="padding: 0.35rem 0; border-bottom: 1px solid rgba(255,255,255,0.05);">' +
+                
+                var actionButtonsHtml = '';
+                if (!isSilenced) {
+                    actionButtonsHtml = '<div style="margin-top: 0.5rem; display: flex; gap: 0.5rem; flex-wrap: wrap;">' +
+                        '<button onclick="triggerAlarmAction(\'snooze\', \'' + item.id + '\', 5)" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.25rem 0.5rem; background: rgba(255,255,255,0.08); border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); color: #fff; cursor: pointer;">⏰ Posponer 5 minutos</button>' +
+                        '<button onclick="triggerAlarmAction(\'snooze\', \'' + item.id + '\', 10)" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.25rem 0.5rem; background: rgba(255,255,255,0.08); border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); color: #fff; cursor: pointer;">⏰ Posponer 10 minutos</button>' +
+                        '<button onclick="triggerAlarmAction(\'snooze\', \'' + item.id + '\', 20)" class="btn btn-secondary" style="font-size: 0.75rem; padding: 0.25rem 0.5rem; background: rgba(255,255,255,0.08); border-radius: 4px; border: 1px solid rgba(255,255,255,0.15); color: #fff; cursor: pointer;">⏰ Posponer 20 minutos</button>' +
+                        '<button onclick="triggerAlarmAction(\'delete\', \'' + item.id + '\')" class="btn btn-danger" style="font-size: 0.75rem; padding: 0.25rem 0.5rem; background: #ef4444; border-radius: 4px; border: none; color: #fff; cursor: pointer;">❌ Eliminar Alarma</button>' +
+                        '</div>';
+                }
+
+                alarmList.innerHTML += '<div style="padding: 0.65rem 0; border-bottom: 1px solid rgba(255,255,255,0.05);">' +
                                        '🔔 <strong>' + item.id + '</strong> - ' + item.name + ' (' + item.limit + ')' + badgeText +
+                                       actionButtonsHtml +
                                        '</div>';
             });
-            alarmOverlay.style.display = 'block';
+            
+            // Check if there is any triggered alarm that has not been dismissed
+            var hasUndismissed = false;
+            triggeredAlarms.forEach(function(item) {
+                if (!dismissedClientIds[item.id]) {
+                    hasUndismissed = true;
+                }
+            });
+
+            if (hasUndismissed) {
+                alarmOverlay.style.display = 'flex';
+            } else {
+                alarmOverlay.style.display = 'none';
+            }
         } else {
             alarmOverlay.style.display = 'none';
         }
 
         // Sound playing control
         if (soundShouldPlay) {
-            if (!isAlarmSounding) {
-                alarmAudio.play().catch(function(e) {
+            if (alarmAudio.paused) {
+                alarmAudio.play().then(function() {
+                    isAlarmSounding = true;
+                }).catch(function(e) {
                     console.log("Autoplay restrictions prevented alarm sound. Waiting for user interaction.");
+                    isAlarmSounding = false;
                 });
-                isAlarmSounding = true;
             }
         } else {
-            if (isAlarmSounding) {
+            if (!alarmAudio.paused) {
                 alarmAudio.pause();
-                isAlarmSounding = false;
             }
+            isAlarmSounding = false;
         }
+    }
+
+    function dismissAllActiveAlarms() {
+        var rows = document.querySelectorAll('.clients-table tbody tr');
+        var nowSeconds = Math.floor(Date.now() / 1000);
+        
+        rows.forEach(function(row) {
+            var idUnico = row.getAttribute('data-id-unico');
+            var status = row.getAttribute('data-status');
+            var lapsoStr = row.getAttribute('data-lapso-tiempo');
+
+            if (status !== 'Pendiente' || !lapsoStr) return;
+
+            var hours = parseLapsoTiempo(lapsoStr);
+            if (hours === 0) return;
+
+            var creationTimestamp = parseInt(row.getAttribute('data-fecha-creacion-timestamp'), 10);
+            var posponerHastaTimestamp = parseInt(row.getAttribute('data-posponer-hasta-timestamp'), 10);
+
+            if (isNaN(creationTimestamp)) {
+                var creationStr = row.getAttribute('data-fecha-creacion-full');
+                if (!creationStr) return;
+                creationTimestamp = Math.floor(new Date(creationStr.replace(' ', 'T')).getTime() / 1000);
+            }
+            if (isNaN(posponerHastaTimestamp)) {
+                posponerHastaTimestamp = 0;
+            }
+
+            var dueTimestamp = creationTimestamp + (hours * 3600);
+
+            if (nowSeconds >= dueTimestamp && (posponerHastaTimestamp === 0 || nowSeconds >= posponerHastaTimestamp)) {
+                silencedClientIds[idUnico] = true;
+                dismissedClientIds[idUnico] = true;
+            }
+        });
+
+        // Pause sound immediately
+        alarmAudio.pause();
+        isAlarmSounding = false;
+
+        // Hide overlay
+        alarmOverlay.style.display = 'none';
+
+        // Recheck immediately to update
+        checkAlarms();
     }
 
     if (silenceBtn) {
         silenceBtn.addEventListener('click', function() {
             // Mark all currently triggered alarms as silenced
             var rows = document.querySelectorAll('.clients-table tbody tr');
-            var now = Date.now();
+            var nowSeconds = Math.floor(Date.now() / 1000);
             
             rows.forEach(function(row) {
                 var idUnico = row.getAttribute('data-id-unico');
                 var status = row.getAttribute('data-status');
                 var lapsoStr = row.getAttribute('data-lapso-tiempo');
-                var creationStr = row.getAttribute('data-fecha-creacion-full');
 
-                if (status !== 'Pendiente' || !lapsoStr || !creationStr) return;
+                if (status !== 'Pendiente' || !lapsoStr) return;
 
                 var hours = parseLapsoTiempo(lapsoStr);
                 if (hours === 0) return;
 
-                var creationTime = new Date(creationStr.replace(' ', 'T')).getTime();
-                var dueTime = creationTime + (hours * 3600 * 1000);
+                var creationTimestamp = parseInt(row.getAttribute('data-fecha-creacion-timestamp'), 10);
+                var posponerHastaTimestamp = parseInt(row.getAttribute('data-posponer-hasta-timestamp'), 10);
 
-                if (now >= dueTime) {
+                if (isNaN(creationTimestamp)) {
+                    var creationStr = row.getAttribute('data-fecha-creacion-full');
+                    if (!creationStr) return;
+                    creationTimestamp = Math.floor(new Date(creationStr.replace(' ', 'T')).getTime() / 1000);
+                }
+                if (isNaN(posponerHastaTimestamp)) {
+                    posponerHastaTimestamp = 0;
+                }
+
+                var dueTimestamp = creationTimestamp + (hours * 3600);
+
+                if (nowSeconds >= dueTimestamp && (posponerHastaTimestamp === 0 || nowSeconds >= posponerHastaTimestamp)) {
                     silencedClientIds[idUnico] = true;
                 }
             });
@@ -606,6 +820,37 @@
             checkAlarms();
         });
     }
+
+    // Dismiss alarm overlay when clicking 'X'
+    if (closeAlarmBtn) {
+        closeAlarmBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            dismissAllActiveAlarms();
+        });
+    }
+
+    // Toggle alarm overlay when clicking the bell icon
+    if (bellBtn) {
+        bellBtn.addEventListener('click', function(e) {
+            e.stopPropagation();
+            
+            // Clear dismissed state so all triggered alarms are visible
+            dismissedClientIds = {};
+            checkAlarms();
+            
+            alarmOverlay.style.display = 'flex';
+        });
+    }
+
+    // Dismiss alarm overlay and silence when clicking outside the card
+    document.addEventListener('click', function(event) {
+        if (alarmOverlay && (alarmOverlay.style.display === 'flex' || alarmOverlay.style.display === 'block')) {
+            var card = alarmOverlay.querySelector('.glass-card');
+            if (card && !card.contains(event.target) && !bellBtn.contains(event.target)) {
+                dismissAllActiveAlarms();
+            }
+        }
+    });
 
     // Run alarm evaluation every 20 seconds
     setInterval(checkAlarms, 20000);

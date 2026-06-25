@@ -65,4 +65,19 @@ interface ClientRepositoryInterface {
      * @return string
      */
     public function getCiudadName($id);
+
+    /**
+     * Snooze/postpone the alarm for a client by unique identifier
+     * @param string $identifier
+     * @param int $minutes
+     * @return bool
+     */
+    public function snoozeAlarm($identifier, $minutes);
+
+    /**
+     * Clear/delete the alarm (duration) for a client by unique identifier
+     * @param string $identifier
+     * @return bool
+     */
+    public function clearAlarm($identifier);
 }

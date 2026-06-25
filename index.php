@@ -112,6 +112,8 @@ $router->add('GET', '/clients/delete', 'ClientController@delete');
 // Order & API Routes
 $router->add('POST', '/orders/save', 'ClientController@saveOrder');
 $router->add('GET', '/api/locations', 'ClientController@getLocations');
+$router->add('POST', '/api/alarms/action', 'ClientController@handleAlarmAction');
+$router->add('GET', '/api/alarms/action', 'ClientController@handleAlarmAction');
 
 // Report Routes
 $router->add('GET', '/report', 'ReportController@download');
