@@ -7,3 +7,12 @@ Paso 2: Agregar boton enviar a whatsapp "584126317284" en "Total Clientes Pendie
 paso 3: sustituir "Llamar en (Días) *" por "imput type='date'" para agendar llamadas en una fecha establesida por el usuario y que suenen la alarma en esa fecha. sin tocar la conexion "mysqli".  por favor usar  "alarma.mp3" para la alarma sonora. y que suene cuando secumpla la fecha agendada.
 
 Paso 4: 
+
+NOTA 
+1. Me falta comisiones ganadas.
+2. Me falta precios de los productos.
+3. Me falta las tasa de los precios divididos entre la tasa del dolar.
+4. Me Falta carga de speak de productos por usuario
+5. Me Falta carga de speak de productos General con select de producto
+6. Meta diaria.
+7. Me faltaria memoranduns con carga de imagenes.
