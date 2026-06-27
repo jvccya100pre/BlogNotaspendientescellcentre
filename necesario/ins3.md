@@ -1,6 +1,6 @@
 Sin tocar el modelo de conexion MYSQL
 
-Paso 1: Generar un archivo que haga "INSERT INTO" con el nombre de todos los "estados, ciudades y municipios" de venezuela segun sintaxis de "faltante.sql" que se llame "escimu.sql" dentro de la carpeta "necesarios" sin tocar la conexion "mysqli".
+Paso 1: Generar un archivo "necesario\escimu.sql" que haga "INSERT INTO" con el nombre de todos los "estados, ciudades y municipios" de venezuela segun sintaxis de "necesario\faltante.sql" y del workspace, Sin alterar nada del contenido  fuera de la carpeta "necesario" ni las sintaxis de php,js,html, etc. 
 
 Paso 2: Agregar boton enviar a whatsapp "584126317284" en "Total Clientes Pendientes" debajo de "Acciones" al lado del boton eliminar debe tener un icono de whatsapp.
 
@@ -16,3 +16,6 @@ NOTA
 5. Me Falta carga de speak de productos General con select de producto
 6. Meta diaria.
 7. Me faltaria memoranduns con carga de imagenes.
+
+
+Para PymPay un modal de solicitud de contacto por visita a nuestra web.
