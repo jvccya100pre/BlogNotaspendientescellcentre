@@ -120,11 +120,18 @@ class MysqlClientRepository implements ClientRepositoryInterface {
             $fecha_actualizacion = $client->fecha_actualizacion !== null ? "'" . mysqli_real_escape_string($this->db, $client->fecha_actualizacion) . "'" : "NULL";
             $posponer_hasta = (isset($client->posponer_hasta) && $client->posponer_hasta !== null) ? "'" . mysqli_real_escape_string($this->db, $client->posponer_hasta) . "'" : "NULL";
 
+            $campana_id = $client->campana_id !== null ? (int)$client->campana_id : "NULL";
+            $campana_item_id = $client->campana_item_id !== null ? (int)$client->campana_item_id : "NULL";
+            $cantidad_items = $client->cantidad_items !== null ? (int)$client->cantidad_items : 1;
+            $comision_aplicada = $client->comision_aplicada !== null ? (double)$client->comision_aplicada : 0.00;
+            $premio_aplicado = $client->premio_aplicado !== null ? (double)$client->premio_aplicado : 0.00;
+            $precio_aplicado = $client->precio_aplicado !== null ? (double)$client->precio_aplicado : 0.00;
+
             if (empty($client->id)) {
                 // INSERT
                 $sql = "INSERT INTO `biartet_clientes` 
-                    (`identificador_unico`, `telefono`, `nombre`, `direccion`, `estado_id`, `municipio_id`, `ciudad_id`, `archivo_adjunto`, `estado_llamada`, `observacion`, `lapso_tiempo`, `lapso_dias`, `estado`, `fecha_creacion`, `fecha_actualizacion`, `posponer_hasta`) 
-                    VALUES ($identificador_unico, $telefono, $nombre, $direccion, $estado_id, $municipio_id, $ciudad_id, $archivo_adjunto, $estado_llamada, $observacion, $lapso_tiempo, $lapso_dias, $estado, $fecha_creacion, $fecha_actualizacion, $posponer_hasta)";
+                    (`identificador_unico`, `telefono`, `nombre`, `direccion`, `estado_id`, `municipio_id`, `ciudad_id`, `archivo_adjunto`, `estado_llamada`, `observacion`, `lapso_tiempo`, `lapso_dias`, `estado`, `fecha_creacion`, `fecha_actualizacion`, `posponer_hasta`, `campana_id`, `campana_item_id`, `cantidad_items`, `comision_aplicada`, `premio_aplicado`, `precio_aplicado`) 
+                    VALUES ($identificador_unico, $telefono, $nombre, $direccion, $estado_id, $municipio_id, $ciudad_id, $archivo_adjunto, $estado_llamada, $observacion, $lapso_tiempo, $lapso_dias, $estado, $fecha_creacion, $fecha_actualizacion, $posponer_hasta, $campana_id, $campana_item_id, $cantidad_items, $comision_aplicada, $premio_aplicado, $precio_aplicado)";
                 return (bool)mysqli_query($this->db, $sql);
             } else {
                 // UPDATE
@@ -142,7 +149,13 @@ class MysqlClientRepository implements ClientRepositoryInterface {
                     `lapso_tiempo` = $lapso_tiempo, 
                     `lapso_dias` = $lapso_dias, 
                     `fecha_actualizacion` = $fecha_actualizacion,
-                    `posponer_hasta` = $posponer_hasta 
+                    `posponer_hasta` = $posponer_hasta,
+                    `campana_id` = $campana_id,
+                    `campana_item_id` = $campana_item_id,
+                    `cantidad_items` = $cantidad_items,
+                    `comision_aplicada` = $comision_aplicada,
+                    `premio_aplicado` = $premio_aplicado,
+                    `precio_aplicado` = $precio_aplicado
                     WHERE `id` = $id";
                 return (bool)mysqli_query($this->db, $sql);
             }
@@ -310,7 +323,13 @@ class MysqlClientRepository implements ClientRepositoryInterface {
             $row['estado'],
             $row['fecha_creacion'],
             $row['fecha_actualizacion'],
-            isset($row['posponer_hasta']) ? $row['posponer_hasta'] : null
+            isset($row['posponer_hasta']) ? $row['posponer_hasta'] : null,
+            isset($row['campana_id']) ? $row['campana_id'] : null,
+            isset($row['campana_item_id']) ? $row['campana_item_id'] : null,
+            isset($row['cantidad_items']) ? (int)$row['cantidad_items'] : 1,
+            isset($row['comision_aplicada']) ? (double)$row['comision_aplicada'] : 0.00,
+            isset($row['premio_aplicado']) ? (double)$row['premio_aplicado'] : 0.00,
+            isset($row['precio_aplicado']) ? (double)$row['precio_aplicado'] : 0.00
         );
     }
 

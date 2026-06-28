@@ -21,6 +21,12 @@ class Client {
     public $fecha_creacion;
     public $fecha_actualizacion;
     public $posponer_hasta;
+    public $campana_id;
+    public $campana_item_id;
+    public $cantidad_items;
+    public $comision_aplicada;
+    public $premio_aplicado;
+    public $precio_aplicado;
 
     public function __construct(
         $id,
@@ -39,7 +45,13 @@ class Client {
         $estado,
         $fecha_creacion,
         $fecha_actualizacion,
-        $posponer_hasta = null
+        $posponer_hasta = null,
+        $campana_id = null,
+        $campana_item_id = null,
+        $cantidad_items = 1,
+        $comision_aplicada = 0.00,
+        $premio_aplicado = 0.00,
+        $precio_aplicado = 0.00
     ) {
         $this->id = $id;
         $this->identificador_unico = $identificador_unico;
@@ -58,6 +70,12 @@ class Client {
         $this->fecha_creacion = $fecha_creacion;
         $this->fecha_actualizacion = $fecha_actualizacion;
         $this->posponer_hasta = $posponer_hasta;
+        $this->campana_id = $campana_id;
+        $this->campana_item_id = $campana_item_id;
+        $this->cantidad_items = $cantidad_items;
+        $this->comision_aplicada = $comision_aplicada;
+        $this->premio_aplicado = $premio_aplicado;
+        $this->precio_aplicado = $precio_aplicado;
     }
 
     /**

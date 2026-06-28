@@ -33,6 +33,7 @@
                 <a href="./" style='color:yellow; font-weight:bold; margin-right:10px;'>INICIO</a>
                 <a href="./?view=pendientes" style='color:yellow; font-weight:bold; margin-right:10px;'>PENDIENTES</a>
                 <a href="./?view=exitosas" style='color:yellow; font-weight:bold; margin-right:10px;'>EXITOSAS</a>
+                <a href="campaigns" style='color:yellow; font-weight:bold; margin-right:10px;'>CAMPAÑAS</a>
             </div>
 
             <div class="navbar-user">

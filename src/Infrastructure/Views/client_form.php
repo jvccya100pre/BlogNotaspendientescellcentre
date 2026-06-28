@@ -147,6 +147,38 @@ $estados = array(
                 <?php endif; ?>
             </div>
 
+            <!-- Campaña y Producto (Paso Campaña) -->
+            <div class="form-group" style="grid-column: span 2; display:grid; grid-template-columns: 1fr 1fr 100px; gap: 1rem;">
+                <div>
+                    <label class="form-label" for="campana_id">Campaña de Venta</label>
+                    <select id="campana_id" name="campana_id">
+                        <option value="">-- Seleccionar Campaña --</option>
+                        <?php foreach ($campaignsList as $camp): ?>
+                            <option value="<?php echo $camp->id; ?>" <?php echo (isset($client) && $client->campana_id == $camp->id) ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($camp->nombre); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="form-label" for="campana_item_id">Producto a Vender</label>
+                    <select id="campana_item_id" name="campana_item_id">
+                        <option value="">-- Seleccionar Producto --</option>
+                        <?php foreach ($campaignItemsList as $item): ?>
+                            <option value="<?php echo $item->id; ?>" <?php echo (isset($client) && $client->campana_item_id == $item->id) ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($item->nombre_producto) . " ($" . $item->precio . ")"; ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div>
+                    <label class="form-label" for="cantidad_items">Cantidad</label>
+                    <input class="form-control" type="number" id="cantidad_items" name="cantidad_items" value="<?php echo isset($client) ? htmlspecialchars($client->cantidad_items) : 1; ?>" min="1" required style="padding: 0.75rem 1rem;">
+                </div>
+            </div>
+
             <!-- Estado de Llamada -->
             <div class="form-group" style="grid-column: span 1;">
                 <label class="form-label" for="estado_llamada">Estado de Llamada *</label>
@@ -274,6 +306,38 @@ document.addEventListener("DOMContentLoaded", function() {
         placeholder: 'Seleccione Ciudad/Sector...',
         controlInput: '<input class="ts-control-search">'
     });
+
+    // Campaigns cascading select
+    var tsCampana = new TomSelect('#campana_id', {
+        create: false,
+        placeholder: 'Seleccione Campaña...',
+        onChange: function(val) {
+            updateCampaignItems(val);
+        }
+    });
+
+    var tsCampanaItem = new TomSelect('#campana_item_id', {
+        create: false,
+        placeholder: 'Seleccione Producto...'
+    });
+
+    function updateCampaignItems(campaignId) {
+        tsCampanaItem.clear();
+        tsCampanaItem.clearOptions();
+        tsCampanaItem.disable();
+
+        if (!campaignId) return;
+
+        fetch('api/campaigns/items?campaign_id=' + campaignId)
+            .then(function(res) { return res.json(); })
+            .then(function(data) {
+                var options = data.map(function(item) {
+                    return { value: item.id, text: item.nombre_producto + ' ($' + item.precio + ')' };
+                });
+                tsCampanaItem.addOptions(options);
+                tsCampanaItem.enable();
+            });
+    }
 
     function updateMunicipios(estadoId) {
         tsMunicipio.clear();

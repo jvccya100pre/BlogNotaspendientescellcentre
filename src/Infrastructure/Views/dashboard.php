@@ -1,3 +1,91 @@
+<?php
+// Calculate earnings control data
+$total_comision = 0.00;
+$total_premio = 0.00;
+$total_exitosas = 0;
+
+foreach ($clients as $c) {
+    if (strtolower($c->estado_llamada) === 'exito pedido pendiente') {
+        $total_comision += (double)$c->comision_aplicada;
+        $total_premio += (double)$c->premio_aplicado;
+        $total_exitosas++;
+    }
+}
+$total_ganancia = $total_comision + $total_premio;
+?>
+
+<!-- Panel de Ganancias Premium Glassmorphism -->
+<div class="glass-card" style="margin-bottom: 2rem; padding: 2rem; background: rgba(30, 8, 9, 0.6); border: 1px solid rgba(255, 255, 255, 0.08);">
+    <h2 class="gradient-text" style="font-size: 1.5rem; margin-bottom: 1.25rem; display:flex; align-items:center; gap:0.5rem;">
+        <svg style="width:24px;height:24px;fill:var(--highlight-color);" viewBox="0 0 24 24">
+            <path d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4M12,6A6,6 0 0,1 18,12A6,6 0 0,1 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6M12,8A4,4 0 0,0 8,12A4,4 0 0,0 12,16A4,4 0 0,0 16,12A4,4 0 0,0 12,8Z" />
+        </svg>
+        Control de Ganancias por Ventas Exitosas
+    </h2>
+    
+    <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
+        <div style="background: rgba(255, 255, 255, 0.03); padding: 1.25rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); text-align: center;">
+            <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-bottom: 0.25rem;">Ventas Concretadas</div>
+            <div style="font-size: 2rem; font-weight: 700; color: var(--highlight-color);"><?php echo $total_exitosas; ?></div>
+        </div>
+        
+        <div style="background: rgba(255, 255, 255, 0.03); padding: 1.25rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); text-align: center;">
+            <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-bottom: 0.25rem;">Comisiones Acumuladas</div>
+            <div style="font-size: 2rem; font-weight: 700; color: #10b981;">$<?php echo number_format($total_comision, 2); ?></div>
+        </div>
+
+        <div style="background: rgba(255, 255, 255, 0.03); padding: 1.25rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); text-align: center;">
+            <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-bottom: 0.25rem;">Premios Extra (Mismo Día)</div>
+            <div style="font-size: 2rem; font-weight: 700; color: #3b82f6;">$<?php echo number_format($total_premio, 2); ?></div>
+        </div>
+
+        <div style="background: rgba(255, 255, 255, 0.03); padding: 1.25rem; border-radius: 12px; border: var(--glass-border-focus); text-align: center; box-shadow: 0 0 15px rgba(255, 223, 32, 0.1);">
+            <div style="font-size: 0.85rem; color: var(--highlight-color); font-weight:600; margin-bottom: 0.25rem;">Ganancia Total</div>
+            <div style="font-size: 2rem; font-weight: 800; color: var(--highlight-color);">$<?php echo number_format($total_ganancia, 2); ?></div>
+        </div>
+    </div>
+</div>
+
+<!-- Selector de Campaña y Charla Comercial -->
+<div class="glass-card" style="margin-bottom: 2rem; padding: 2rem;">
+    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:1.5rem; gap:1rem;">
+        <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
+            <h2 class="gradient-text" style="font-size: 1.3rem; margin:0;">Charla Comercial de Campaña:</h2>
+            <select id="select_campana_charla" class="form-control" style="width: 250px; padding: 0.5rem 1rem; height: auto;">
+                <option value="">-- Seleccionar Campaña --</option>
+                <?php foreach ($campaignsList as $camp): ?>
+                    <option value="<?php echo $camp->id; ?>"><?php echo htmlspecialchars($camp->nombre); ?></option>
+                <?php endforeach; ?>
+            </select>
+            <div id="campana_actions" style="display:none; gap:0.5rem; align-items:center;">
+                <a href="#" id="btn_edit_campana" class="btn btn-secondary action-btn" style="padding: 0.4rem 0.8rem; font-size:0.85rem;" title="Editar Campaña">
+                    Editar
+                </a>
+                <a href="#" id="btn_delete_campana" class="btn btn-secondary btn-danger action-btn" style="padding: 0.4rem 0.8rem; font-size:0.85rem;" title="Eliminar Campaña">
+                    Eliminar
+                </a>
+            </div>
+        </div>
+        <button type="button" id="btn_toggle_charla" class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size:0.85rem;">
+            Ocultar Charla
+        </button>
+    </div>
+
+    <div id="charla_script_container" style="display:none;">
+        <!-- Pestañas para las 3 charlas -->
+        <div style="display:flex; gap:0.5rem; margin-bottom:1rem; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:0.5rem;">
+            <button type="button" class="tab-charla-btn active" data-tab="saludo" style="background:none; border:none; color:var(--highlight-color); font-weight:600; padding:0.5rem 1rem; cursor:pointer; border-bottom:2px solid var(--highlight-color);">1. Saludo</button>
+            <button type="button" class="tab-charla-btn" data-tab="desarrollo" style="background:none; border:none; color:rgba(255,255,255,0.6); font-weight:600; padding:0.5rem 1rem; cursor:pointer; border-bottom:2px solid transparent;">2. Desarrollo</button>
+            <button type="button" class="tab-charla-btn" data-tab="cierre" style="background:none; border:none; color:rgba(255,255,255,0.6); font-weight:600; padding:0.5rem 1rem; cursor:pointer; border-bottom:2px solid transparent;">3. Cierre</button>
+        </div>
+
+        <!-- Área de texto del script -->
+        <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:1.5rem; min-height:120px; max-height:300px; overflow-y:auto; font-size:0.95rem; line-height:1.6; white-space:pre-wrap;" id="charla_text_content">
+            Seleccione una campaña para visualizar su charla de ventas.
+        </div>
+    </div>
+</div>
+
 <div class="glass-card">
     <div id="clientes-pendientes-header"
         style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:1.5rem; gap:1rem;">
@@ -995,5 +1083,112 @@
         setInterval(checkAlarms, 20000);
         // Run once on load after 2 seconds
         setTimeout(checkAlarms, 2000);
+    })();
+
+    // Campaign speech script logic
+    (function() {
+        var campaignsData = <?php 
+            $json_data = array();
+            foreach ($campaignsList as $camp) {
+                $json_data[$camp->id] = array(
+                    'id' => $camp->id,
+                    'nombre' => $camp->nombre,
+                    'saludo' => $camp->charla_saludo,
+                    'desarrollo' => $camp->charla_desarrollo,
+                    'cierre' => $camp->charla_cierre
+                );
+            }
+            echo json_encode($json_data);
+        ?>;
+
+        var selectCampana = document.getElementById('select_campana_charla');
+        var campanaActions = document.getElementById('campana_actions');
+        var btnEdit = document.getElementById('btn_edit_campana');
+        var btnDelete = document.getElementById('btn_delete_campana');
+        var btnToggleCharla = document.getElementById('btn_toggle_charla');
+        var scriptContainer = document.getElementById('charla_script_container');
+        var textContent = document.getElementById('charla_text_content');
+        var tabBtns = document.querySelectorAll('.tab-charla-btn');
+
+        var activeTab = 'saludo';
+        var selectedCampaignId = '';
+        var showCharla = true;
+
+        var storedCampId = localStorage.getItem('selected_campana_id');
+        if (storedCampId && campaignsData[storedCampId]) {
+            selectCampana.value = storedCampId;
+            handleCampaignChange(storedCampId);
+        }
+
+        selectCampana.addEventListener('change', function() {
+            var campId = this.value;
+            localStorage.setItem('selected_campana_id', campId);
+            handleCampaignChange(campId);
+        });
+
+        function handleCampaignChange(campId) {
+            selectedCampaignId = campId;
+            if (!campId) {
+                campanaActions.style.display = 'none';
+                scriptContainer.style.display = 'none';
+                textContent.textContent = 'Seleccione una campaña para visualizar su charla de ventas.';
+                return;
+            }
+
+            campanaActions.style.display = 'inline-flex';
+            btnEdit.href = 'campaigns/edit?id=' + campId;
+            btnDelete.href = 'campaigns/delete?id=' + campId;
+            btnDelete.onclick = function() {
+                return confirm('¿Está seguro de que desea eliminar la campaña "' + campaignsData[campId].nombre + '"?');
+            };
+
+            if (showCharla) {
+                scriptContainer.style.display = 'block';
+            }
+            updateTabText();
+        }
+
+        btnToggleCharla.addEventListener('click', function() {
+            showCharla = !showCharla;
+            if (showCharla) {
+                if (selectedCampaignId) {
+                    scriptContainer.style.display = 'block';
+                }
+                btnToggleCharla.textContent = 'Ocultar Charla';
+            } else {
+                scriptContainer.style.display = 'none';
+                btnToggleCharla.textContent = 'Mostrar Charla';
+            }
+        });
+
+        tabBtns.forEach(function(btn) {
+            btn.addEventListener('click', function() {
+                tabBtns.forEach(function(b) {
+                    b.classList.remove('active');
+                    b.style.color = 'rgba(255,255,255,0.6)';
+                    b.style.borderBottomColor = 'transparent';
+                });
+                btn.classList.add('active');
+                btn.style.color = 'var(--highlight-color)';
+                btn.style.borderBottomColor = 'var(--highlight-color)';
+                
+                activeTab = btn.getAttribute('data-tab');
+                updateTabText();
+            });
+        });
+
+        function updateTabText() {
+            if (!selectedCampaignId) return;
+            var camp = campaignsData[selectedCampaignId];
+            var text = '';
+            if (activeTab === 'saludo') {
+                text = camp.saludo;
+            } else if (activeTab === 'desarrollo') {
+                text = camp.desarrollo;
+            } else if (activeTab === 'cierre') {
+                text = camp.cierre;
+            }
+            textContent.textContent = text || '(Esta charla no tiene contenido registrado)';
+        }
     })();
 </script>
