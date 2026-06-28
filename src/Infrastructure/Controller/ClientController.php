@@ -312,6 +312,34 @@ class ClientController {
     }
 
     /**
+     * Change client status to "Exito pedido pendiente"
+     */
+    public function setStatusExito() {
+        $this->checkAuth();
+        
+        $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+        if ($id > 0) {
+            try {
+                $db = DatabaseConnection::getInstance();
+                $id_escaped = (int)$id;
+                $sql = "UPDATE `biartet_clientes` SET `estado_llamada` = 'Exito pedido pendiente', `fecha_actualizacion` = NOW() WHERE `id` = $id_escaped";
+                if (mysqli_query($db, $sql)) {
+                    $_SESSION['success_message'] = 'Estado del cliente actualizado a exitoso con éxito.';
+                } else {
+                    $_SESSION['error_message'] = 'Error al intentar actualizar el estado del cliente.';
+                }
+            } catch (Exception $e) {
+                $_SESSION['error_message'] = 'Error de base de datos: ' . $e->getMessage();
+            }
+        } else {
+            $_SESSION['error_message'] = 'ID de cliente inválido.';
+        }
+        
+        header('Location: ./');
+        exit();
+    }
+
+    /**
      * AJAX endpoint to snooze or delete alarm (Paso de Alarma)
      */
     public function handleAlarmAction() {

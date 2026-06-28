@@ -108,6 +108,7 @@ $router->add('GET', '/clients/create', 'ClientController@showCreate');
 $router->add('GET', '/clients/edit', 'ClientController@showEdit');
 $router->add('POST', '/clients/save', 'ClientController@save');
 $router->add('GET', '/clients/delete', 'ClientController@delete');
+$router->add('GET', '/clients/status-exito', 'ClientController@setStatusExito');
 
 // Order & API Routes
 $router->add('POST', '/orders/save', 'ClientController@saveOrder');
