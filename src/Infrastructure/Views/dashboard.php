@@ -1,5 +1,5 @@
 <div class="glass-card">
-    <div
+    <div id="clientes-pendientes-header"
         style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:1.5rem; gap:1rem;">
         <div>
             <h1 class="gradient-text" style="margin-bottom:0.25rem;">Total Clientes Pendientes</h1>
@@ -34,6 +34,19 @@
                 <span>Nuevo Registro</span>
             </a>
         </div>
+    </div>
+
+    <!-- View Filter Status (Navbar navigation filtering) -->
+    <div id="view_filter_alert" class="alert alert-info" style="display:none; align-items:center; justify-content:space-between; width:100%; margin-bottom:1.5rem; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); color: #93c5fd;">
+        <div style="display:flex; align-items:center; gap:0.5rem;">
+            <svg style="width:20px;height:20px;fill:currentColor" viewBox="0 0 24 24">
+                <path d="M12,2A10,10 0 1,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 1,0 20,12A8,8 0 0,0 12,4M11,17H13V11H11V17M11,9H13V7H11V9Z" />
+            </svg>
+            <span id="view_filter_message">Mostrando sección filtrada.</span>
+        </div>
+        <a href="./" class="btn btn-secondary" style="padding: 0.25rem 0.6rem; font-size: 0.8rem; height: auto; text-decoration: none; border-color: rgba(255,255,255,0.2); line-height: 1.2;">
+            Mostrar Todo
+        </a>
     </div>
 
     <!-- Alert Messages -->
@@ -95,7 +108,7 @@
     </div>
 
     <!-- Client List Table -->
-    <div class="table-responsive">
+    <div class="table-responsive" id="clientes-pendientes-table-container">
         <?php if (empty($clients)): ?>
             <div style="padding:3rem; text-align:center; color:rgba(255,255,255,0.4);">
                 <svg style="width:64px;height:64px;fill:currentColor;margin-bottom:1rem;" viewBox="0 0 24 24">
@@ -201,7 +214,7 @@
 </div>
 
 <!-- Pedidos Registrados Table (Paso 9) -->
-<div class="glass-card" style="margin-top: 2rem;">
+<div class="glass-card" id="pedidos-exitosos-section" style="margin-top: 2rem;">
     <div>
         <h2 class="gradient-text" style="margin-bottom:0.25rem;">Pedidos Registrados</h2>
         <p style="font-size:0.9rem; color:rgba(255,255,255,0.6); margin-bottom:1.5rem;">Registro de pedidos concretados
@@ -384,6 +397,45 @@
 <!-- Scripts for Modal, Unified Filtering and Alarm Systems -->
 <script>
     (function () {
+        // ----------------------------------------------------
+        // 0. View Parameter Filtering (INICIO, PENDIENTES, EXITOSAS)
+        // ----------------------------------------------------
+        function checkUrlViewFilter() {
+            var urlParams = new URLSearchParams(window.location.search);
+            var view = urlParams.get('view');
+            var pendingHeader = document.getElementById('clientes-pendientes-header');
+            var pendingTableContainer = document.getElementById('clientes-pendientes-table-container');
+            var successSection = document.getElementById('pedidos-exitosos-section');
+            var filterAlert = document.getElementById('view_filter_alert');
+            var filterMsg = document.getElementById('view_filter_message');
+
+            if (view === 'pendientes') {
+                if (pendingHeader) pendingHeader.style.display = 'flex';
+                if (pendingTableContainer) pendingTableContainer.style.display = 'block';
+                if (successSection) successSection.style.display = 'none';
+                if (filterAlert && filterMsg) {
+                    filterMsg.textContent = 'Filtrado por: Ventas Pendientes';
+                    filterAlert.style.display = 'flex';
+                }
+            } else if (view === 'exitosas') {
+                if (pendingHeader) pendingHeader.style.display = 'none';
+                if (pendingTableContainer) pendingTableContainer.style.display = 'none';
+                if (successSection) successSection.style.display = 'block';
+                if (filterAlert && filterMsg) {
+                    filterMsg.textContent = 'Filtrado por: Ventas Exitosas';
+                    filterAlert.style.display = 'flex';
+                }
+            } else {
+                if (pendingHeader) pendingHeader.style.display = 'flex';
+                if (pendingTableContainer) pendingTableContainer.style.display = 'block';
+                if (successSection) successSection.style.display = 'block';
+                if (filterAlert) {
+                    filterAlert.style.display = 'none';
+                }
+            }
+        }
+        checkUrlViewFilter();
+
         // ----------------------------------------------------
         // 1. Modal Logic (Paso 9)
         // ----------------------------------------------------
