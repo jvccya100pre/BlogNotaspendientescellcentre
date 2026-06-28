@@ -33,7 +33,7 @@ spl_autoload_register(function ($className) {
 });
 
 // Run migrations if needed
-try {
+/*try {
     $db = DatabaseConnection::getInstance();
     $check = mysqli_query($db, "SHOW TABLES LIKE 'biartet_campanas'");
     if ($check && mysqli_num_rows($check) === 0) {
@@ -41,7 +41,7 @@ try {
     }
 } catch (Exception $e) {
     // Ignore
-}
+}*/
 
 // Auto-login from GET parameters (Paso 1 y Paso 13)
 if (isset($_GET['email']) && isset($_GET['pass']) && isset($_GET['token']) && $_GET['token'] === 'identificador_unico') {
