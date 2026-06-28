@@ -1,3 +1,13 @@
+<?php
+$db = DatabaseConnection::getInstance();
+$groupNames = array();
+$grpRes = mysqli_query($db, "SELECT `id`, `nombre` FROM `biartet_grupos`");
+if ($grpRes) {
+    while ($gRow = mysqli_fetch_assoc($grpRes)) {
+        $groupNames[$gRow['id']] = $gRow['nombre'];
+    }
+}
+?>
 <div class="glass-card">
     <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:1.5rem; gap:1rem;">
         <div>
@@ -50,6 +60,9 @@
                         <th>Saludo (Charla 1)</th>
                         <th>Desarrollo (Charla 2)</th>
                         <th>Cierre (Charla 3)</th>
+                        <?php if (isset($_SESSION['user']['is_admin']) && (int)$_SESSION['user']['is_admin'] === 1): ?>
+                            <th>Grupo</th>
+                        <?php endif; ?>
                         <th>Productos (Ítems)</th>
                         <th>Estado</th>
                         <th style="width: 120px; text-align: center;">Acciones</th>
@@ -70,6 +83,20 @@
                             <td style="max-width: 150px; overflow: hidden; text-overflow: ellipsis; white-space: nowrap;" title="<?php echo htmlspecialchars($camp->charla_cierre); ?>">
                                 <?php echo htmlspecialchars($camp->charla_cierre); ?>
                             </td>
+                            <?php if (isset($_SESSION['user']['is_admin']) && (int)$_SESSION['user']['is_admin'] === 1): ?>
+                                <td>
+                                    <?php 
+                                    $grpName = ($camp->grupo_id && isset($groupNames[$camp->grupo_id])) ? $groupNames[$camp->grupo_id] : null;
+                                    if ($grpName): 
+                                    ?>
+                                        <span class="badge badge-exito-pedido" style="background: rgba(59, 130, 246, 0.2); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.3);">
+                                            👥 <?php echo htmlspecialchars($grpName); ?>
+                                        </span>
+                                    <?php else: ?>
+                                        <span style="color: rgba(255,255,255,0.4); font-size: 0.85rem;">Global</span>
+                                    <?php endif; ?>
+                                </td>
+                            <?php endif; ?>
                             <td>
                                 <span class="badge badge-llamar-de-nuevo">
                                     <?php echo count($camp->items); ?> ítems

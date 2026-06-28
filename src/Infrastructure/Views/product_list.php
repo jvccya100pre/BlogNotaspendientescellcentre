@@ -31,6 +31,9 @@
                     <th style="width: 80px;">Imagen</th>
                     <th>Nombre</th>
                     <th>Descripción</th>
+                    <?php if (isset($_SESSION['user']['is_admin']) && (int)$_SESSION['user']['is_admin'] === 1): ?>
+                        <th>Grupo</th>
+                    <?php endif; ?>
                     <th style="width: 150px; text-align: right;">Precio (Moneda Local)</th>
                     <th style="width: 160px; text-align: center;">Acciones</th>
                 </tr>
@@ -38,7 +41,7 @@
             <tbody>
                 <?php if (empty($products)): ?>
                     <tr>
-                        <td colspan="5" style="text-align: center; color: rgba(255,255,255,0.4); padding: 2rem;">
+                        <td colspan="<?php echo (isset($_SESSION['user']['is_admin']) && (int)$_SESSION['user']['is_admin'] === 1) ? 6 : 5; ?>" style="text-align: center; color: rgba(255,255,255,0.4); padding: 2rem;">
                             No hay productos registrados en el catálogo.
                         </td>
                     </tr>
@@ -60,6 +63,17 @@
                             <td style="color: rgba(255,255,255,0.8); font-size: 0.9rem; max-width: 400px; white-space: nowrap; overflow: hidden; text-transform: none; text-overflow: ellipsis;">
                                 <?php echo htmlspecialchars($prod['descripcion']); ?>
                             </td>
+                            <?php if (isset($_SESSION['user']['is_admin']) && (int)$_SESSION['user']['is_admin'] === 1): ?>
+                                <td>
+                                    <?php if (!empty($prod['grupo_nombre'])): ?>
+                                        <span class="badge badge-exito-pedido" style="background: rgba(59, 130, 246, 0.2); color: #93c5fd; border: 1px solid rgba(59, 130, 246, 0.3);">
+                                            👥 <?php echo htmlspecialchars($prod['grupo_nombre']); ?>
+                                        </span>
+                                    <?php else: ?>
+                                        <span style="color: rgba(255,255,255,0.4); font-size: 0.85rem;">Global</span>
+                                    <?php endif; ?>
+                                </td>
+                            <?php endif; ?>
                             <td style="text-align: right; font-weight: 700; color: #10b981;">
                                 $<?php echo number_format((double)$prod['precio_moneda_local'], 2); ?>
                             </td>

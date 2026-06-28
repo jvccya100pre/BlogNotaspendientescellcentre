@@ -11,10 +11,27 @@
         </div>
     </div>
 
-    <!-- Date selector panel -->
-    <div style="background: rgba(255, 255, 255, 0.03); padding: 1.25rem; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.06); margin-bottom: 2rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
-        <label class="form-label" for="selected_fecha" style="margin-bottom: 0; font-weight: bold; color: var(--highlight-color);">Seleccione la Fecha:</label>
-        <input type="date" id="selected_fecha" class="form-control" value="<?php echo htmlspecialchars($fecha); ?>" style="width: 200px; padding: 0.5rem 1rem;" onchange="changeFecha(this.value)">
+    <!-- Date & Group selector panel -->
+    <div style="background: rgba(255, 255, 255, 0.03); padding: 1.25rem; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.06); margin-bottom: 2rem; display: flex; align-items: center; gap: 1.5rem; flex-wrap: wrap;">
+        <div>
+            <label class="form-label" for="selected_fecha" style="margin-bottom: 0.25rem; font-weight: bold; color: var(--highlight-color);">Seleccione la Fecha:</label>
+            <input type="date" id="selected_fecha" class="form-control" value="<?php echo htmlspecialchars($fecha); ?>" style="width: 200px; padding: 0.5rem 1rem;" onchange="changeFilter()">
+        </div>
+        <div>
+            <label class="form-label" for="selected_grupo" style="margin-bottom: 0.25rem; font-weight: bold; color: var(--highlight-color);">Seleccione el Grupo:</label>
+            <select id="selected_grupo" class="form-control" style="width: 250px; padding: 0.5rem 1rem;" onchange="changeFilter()">
+                <option value="0" <?php echo (int)$grupo_id === 0 ? 'selected' : ''; ?>>Global / Todos (Sin Grupo)</option>
+                <?php
+                $db = DatabaseConnection::getInstance();
+                $groupsRes = mysqli_query($db, "SELECT * FROM `biartet_grupos` ORDER BY `nombre` ASC");
+                if ($groupsRes) {
+                    while ($g = mysqli_fetch_assoc($groupsRes)) {
+                        echo '<option value="' . $g['id'] . '" ' . ((int)$grupo_id === (int)$g['id'] ? 'selected' : '') . '>' . htmlspecialchars($g['nombre']) . '</option>';
+                    }
+                }
+                ?>
+            </select>
+        </div>
     </div>
 
     <?php if (isset($success)): ?>
@@ -31,6 +48,7 @@
 
     <form action="daily-prizes/save" method="POST">
         <input type="hidden" name="fecha" value="<?php echo htmlspecialchars($fecha); ?>">
+        <input type="hidden" name="grupo_id" value="<?php echo htmlspecialchars($grupo_id); ?>">
 
         <div class="table-responsive" style="margin-bottom: 1.5rem;">
             <table class="custom-table">
@@ -79,9 +97,9 @@
 </div>
 
 <script>
-function changeFecha(val) {
-    if (val) {
-        window.location.href = 'daily-prizes?fecha=' + encodeURIComponent(val);
-    }
+function changeFilter() {
+    var fecha = document.getElementById('selected_fecha').value;
+    var grupo = document.getElementById('selected_grupo').value;
+    window.location.href = 'daily-prizes?fecha=' + encodeURIComponent(fecha) + '&grupo_id=' + encodeURIComponent(grupo);
 }
 </script>

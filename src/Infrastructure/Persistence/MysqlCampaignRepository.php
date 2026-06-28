@@ -40,7 +40,16 @@ class MysqlCampaignRepository {
     public function findAllActive() {
         try {
             $userId = isset($_SESSION['user']['id']) ? (int)$_SESSION['user']['id'] : 0;
-            $result = mysqli_query($this->db, "SELECT * FROM `biartet_campanas` WHERE `estado` = 1 AND (`usuario_id` IS NULL OR `usuario_id` = $userId) ORDER BY `nombre` ASC");
+            $isAdmin = isset($_SESSION['user']['is_admin']) ? (int)$_SESSION['user']['is_admin'] : 0;
+            $userGroupId = isset($_SESSION['user']['grupo_id']) ? (int)$_SESSION['user']['grupo_id'] : 0;
+
+            if ($isAdmin === 1) {
+                $result = mysqli_query($this->db, "SELECT * FROM `biartet_campanas` WHERE `estado` = 1 ORDER BY `nombre` ASC");
+            } else {
+                $groupCond = ($userGroupId > 0) ? "OR (`usuario_id` IS NULL AND (`grupo_id` IS NULL OR `grupo_id` = $userGroupId))" : "OR (`usuario_id` IS NULL AND `grupo_id` IS NULL)";
+                $result = mysqli_query($this->db, "SELECT * FROM `biartet_campanas` WHERE `estado` = 1 AND (`usuario_id` = $userId $groupCond) ORDER BY `nombre` ASC");
+            }
+
             if (!$result) {
                 return array();
             }
@@ -62,7 +71,16 @@ class MysqlCampaignRepository {
     public function findAll() {
         try {
             $userId = isset($_SESSION['user']['id']) ? (int)$_SESSION['user']['id'] : 0;
-            $result = mysqli_query($this->db, "SELECT * FROM `biartet_campanas` WHERE (`usuario_id` IS NULL OR `usuario_id` = $userId) ORDER BY `fecha_creacion` DESC");
+            $isAdmin = isset($_SESSION['user']['is_admin']) ? (int)$_SESSION['user']['is_admin'] : 0;
+            $userGroupId = isset($_SESSION['user']['grupo_id']) ? (int)$_SESSION['user']['grupo_id'] : 0;
+
+            if ($isAdmin === 1) {
+                $result = mysqli_query($this->db, "SELECT * FROM `biartet_campanas` ORDER BY `fecha_creacion` DESC");
+            } else {
+                $groupCond = ($userGroupId > 0) ? "OR (`usuario_id` IS NULL AND (`grupo_id` IS NULL OR `grupo_id` = $userGroupId))" : "OR (`usuario_id` IS NULL AND `grupo_id` IS NULL)";
+                $result = mysqli_query($this->db, "SELECT * FROM `biartet_campanas` WHERE (`usuario_id` = $userId $groupCond) ORDER BY `fecha_creacion` DESC");
+            }
+
             if (!$result) {
                 return array();
             }
@@ -96,10 +114,11 @@ class MysqlCampaignRepository {
                 $userId = isset($_SESSION['user']['id']) ? (int)$_SESSION['user']['id'] : 0;
                 $isAdmin = isset($_SESSION['user']['is_admin']) ? (int)$_SESSION['user']['is_admin'] : 0;
                 $usuario_id = ($isAdmin === 1) ? "NULL" : $userId;
+                $grupo_id_val = ($campaign->grupo_id !== null) ? (int)$campaign->grupo_id : "NULL";
 
                 $sql = "INSERT INTO `biartet_campanas` 
-                    (`nombre`, `charla_saludo`, `charla_desarrollo`, `charla_cierre`, `estado`, `fecha_creacion`, `fecha_actualizacion`, `usuario_id`) 
-                    VALUES ($nombre, $charla_saludo, $charla_desarrollo, $charla_cierre, $estado, '$now', '$now', $usuario_id)";
+                    (`nombre`, `charla_saludo`, `charla_desarrollo`, `charla_cierre`, `estado`, `fecha_creacion`, `fecha_actualizacion`, `usuario_id`, `grupo_id`) 
+                    VALUES ($nombre, $charla_saludo, $charla_desarrollo, $charla_cierre, $estado, '$now', '$now', $usuario_id, $grupo_id_val)";
                 if (mysqli_query($this->db, $sql)) {
                     $campaignId = mysqli_insert_id($this->db);
                     $this->saveItems($campaignId, $campaign->items);
@@ -109,12 +128,14 @@ class MysqlCampaignRepository {
             } else {
                 // UPDATE
                 $id = (int)$campaign->id;
+                $grupo_id_val = ($campaign->grupo_id !== null) ? (int)$campaign->grupo_id : "NULL";
                 $sql = "UPDATE `biartet_campanas` SET 
                     `nombre` = $nombre, 
                     `charla_saludo` = $charla_saludo, 
                     `charla_desarrollo` = $charla_desarrollo, 
                     `charla_cierre` = $charla_cierre, 
                     `estado` = $estado, 
+                    `grupo_id` = $grupo_id_val,
                     `fecha_actualizacion` = '$now' 
                     WHERE `id` = $id";
                 if (mysqli_query($this->db, $sql)) {
@@ -244,7 +265,8 @@ class MysqlCampaignRepository {
             $row['fecha_creacion'],
             $row['fecha_actualizacion'],
             $items,
-            $row['usuario_id'] !== null ? (int)$row['usuario_id'] : null
+            $row['usuario_id'] !== null ? (int)$row['usuario_id'] : null,
+            $row['grupo_id'] !== null ? (int)$row['grupo_id'] : null
         );
     }
 }

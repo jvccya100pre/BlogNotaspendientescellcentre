@@ -39,7 +39,16 @@ class ProductController {
         $db = DatabaseConnection::getInstance();
         
         $userId = isset($_SESSION['user']['id']) ? (int)$_SESSION['user']['id'] : 0;
-        $result = mysqli_query($db, "SELECT * FROM `biartet_productos` WHERE `usuario_id` IS NULL OR `usuario_id` = $userId ORDER BY `nombre` ASC");
+        $isAdmin = isset($_SESSION['user']['is_admin']) ? (int)$_SESSION['user']['is_admin'] : 0;
+        $userGroupId = isset($_SESSION['user']['grupo_id']) ? (int)$_SESSION['user']['grupo_id'] : 0;
+
+        if ($isAdmin === 1) {
+            $result = mysqli_query($db, "SELECT p.*, g.nombre AS grupo_nombre FROM `biartet_productos` p LEFT JOIN `biartet_grupos` g ON p.grupo_id = g.id ORDER BY p.nombre ASC");
+        } else {
+            $groupCond = ($userGroupId > 0) ? "OR (p.usuario_id IS NULL AND (p.grupo_id IS NULL OR p.grupo_id = $userGroupId))" : "OR (p.usuario_id IS NULL AND p.grupo_id IS NULL)";
+            $result = mysqli_query($db, "SELECT p.*, g.nombre AS grupo_nombre FROM `biartet_productos` p LEFT JOIN `biartet_grupos` g ON p.grupo_id = g.id WHERE p.usuario_id = $userId $groupCond ORDER BY p.nombre ASC");
+        }
+        
         $products = array();
         if ($result) {
             while ($row = mysqli_fetch_assoc($result)) {
@@ -181,12 +190,16 @@ class ProductController {
         $desc_escaped = mysqli_real_escape_string($db, $descripcion);
         $img_escaped = mysqli_real_escape_string($db, $imagen);
 
+        $grupo_id = isset($_POST['grupo_id']) && $_POST['grupo_id'] !== '' ? (int)$_POST['grupo_id'] : null;
+        $grupo_val = ($grupo_id !== null) ? $grupo_id : "NULL";
+
         if ($id) {
             $sql = "UPDATE `biartet_productos` SET 
                 `nombre` = '$nombre_escaped', 
                 `descripcion` = '$desc_escaped', 
                 `imagen` = '$img_escaped', 
                 `precio_moneda_local` = $precio_moneda_local, 
+                `grupo_id` = $grupo_val,
                 `fecha_actualizacion` = NOW() 
                 WHERE `id` = $id";
             $success = mysqli_query($db, $sql);
@@ -199,8 +212,8 @@ class ProductController {
         } else {
             $usuario_id = ($isAdmin === 1) ? "NULL" : $userId;
             $sql = "INSERT INTO `biartet_productos` 
-                (`nombre`, `descripcion`, `imagen`, `precio_moneda_local`, `fecha_creacion`, `fecha_actualizacion`, `usuario_id`) 
-                VALUES ('$nombre_escaped', '$desc_escaped', '$img_escaped', $precio_moneda_local, NOW(), NOW(), $usuario_id)";
+                (`nombre`, `descripcion`, `imagen`, `precio_moneda_local`, `fecha_creacion`, `fecha_actualizacion`, `usuario_id`, `grupo_id`) 
+                VALUES ('$nombre_escaped', '$desc_escaped', '$img_escaped', $precio_moneda_local, NOW(), NOW(), $usuario_id, $grupo_val)";
             $success = mysqli_query($db, $sql);
             if ($success) {
                 SystemLog::write("Creó producto: " . $nombre);

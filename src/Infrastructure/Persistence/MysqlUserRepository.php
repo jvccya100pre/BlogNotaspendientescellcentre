@@ -35,7 +35,8 @@ class MysqlUserRepository implements UserRepositoryInterface {
                 $row['contrasena_dialview'],
                 $row['fecha_eliminacion'],
                 $row['fecha_creacion'],
-                $row['fecha_actualizacion']
+                $row['fecha_actualizacion'],
+                $row['grupo_id'] !== null ? (int)$row['grupo_id'] : null
             );
         } catch (Exception $e) {
             return null;

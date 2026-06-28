@@ -26,7 +26,8 @@ class AuthController {
                 $_SESSION['user'] = array(
                     'id' => $user->id,
                     'username' => $user->username,
-                    'is_admin' => 1
+                    'is_admin' => 1,
+                    'grupo_id' => $user->grupo_id
                 );
                 $_SESSION['last_activity'] = time();
                 self::sendAuthEmail('login', $email);
@@ -60,7 +61,8 @@ class AuthController {
             $_SESSION['user'] = array(
                 'id' => $user->id,
                 'username' => $user->username,
-                'is_admin' => (int)$user->is_admin
+                'is_admin' => (int)$user->is_admin,
+                'grupo_id' => $user->grupo_id
             );
             $_SESSION['last_activity'] = time();
             

@@ -58,12 +58,17 @@ class AdminController {
 
         $fecha = isset($_GET['fecha']) ? trim($_GET['fecha']) : date('Y-m-d');
         $fecha_escaped = mysqli_real_escape_string($db, $fecha);
+        
+        $grupo_id = isset($_GET['grupo_id']) && $_GET['grupo_id'] !== '' ? (int)$_GET['grupo_id'] : 0;
+        $group_cond = ($grupo_id > 0) ? "AND (c.grupo_id IS NULL OR c.grupo_id = $grupo_id)" : "AND c.grupo_id IS NULL";
+        $join_cond = ($grupo_id > 0) ? "AND dp.grupo_id = $grupo_id" : "AND dp.grupo_id IS NULL";
 
-        // Fetch all active campaign items
+        // Fetch active campaign items for the selected group
         $sql = "SELECT ci.id, ci.nombre_producto, c.nombre AS campana_nombre, COALESCE(dp.premio_extra, 0.00) AS premio_hoy
                 FROM `biartet_campana_items` ci
                 INNER JOIN `biartet_campanas` c ON ci.campana_id = c.id
-                LEFT JOIN `biartet_premios_diarios` dp ON ci.id = dp.campana_item_id AND dp.fecha = '$fecha_escaped'
+                LEFT JOIN `biartet_premios_diarios` dp ON ci.id = dp.campana_item_id AND dp.fecha = '$fecha_escaped' $join_cond
+                WHERE c.usuario_id IS NULL $group_cond
                 ORDER BY c.nombre ASC, ci.nombre_producto ASC";
         
         $result = mysqli_query($db, $sql);
@@ -77,6 +82,7 @@ class AdminController {
         $this->render('daily_prizes', array(
             'title' => 'Control de Premios por Día',
             'fecha' => $fecha,
+            'grupo_id' => $grupo_id,
             'items' => $items,
             'success' => isset($_SESSION['success_message']) ? $_SESSION['success_message'] : null,
             'error' => isset($_SESSION['error_message']) ? $_SESSION['error_message'] : null
@@ -90,6 +96,7 @@ class AdminController {
         $db = DatabaseConnection::getInstance();
 
         $fecha = isset($_POST['fecha']) ? trim($_POST['fecha']) : '';
+        $grupo_id = isset($_POST['grupo_id']) ? (int)$_POST['grupo_id'] : 0;
         $premios = isset($_POST['premios']) ? $_POST['premios'] : array();
 
         if (empty($fecha)) {
@@ -99,27 +106,28 @@ class AdminController {
         }
 
         $fecha_escaped = mysqli_real_escape_string($db, $fecha);
+        $grupo_val = ($grupo_id > 0) ? $grupo_id : "NULL";
 
         foreach ($premios as $itemId => $amount) {
             $itemId = (int)$itemId;
             $amount = (double)$amount;
 
             // Check if record exists
-            $checkSql = "SELECT `id` FROM `biartet_premios_diarios` WHERE `fecha` = '$fecha_escaped' AND `campana_item_id` = $itemId LIMIT 1";
+            $checkSql = "SELECT `id` FROM `biartet_premios_diarios` WHERE `fecha` = '$fecha_escaped' AND `campana_item_id` = $itemId AND " . ($grupo_id > 0 ? "`grupo_id` = $grupo_id" : "`grupo_id` IS NULL") . " LIMIT 1";
             $checkRes = mysqli_query($db, $checkSql);
             $checkRow = $checkRes ? mysqli_fetch_assoc($checkRes) : null;
 
             if ($checkRow) {
                 $sql = "UPDATE `biartet_premios_diarios` SET `premio_extra` = $amount WHERE `id` = " . (int)$checkRow['id'];
             } else {
-                $sql = "INSERT INTO `biartet_premios_diarios` (`fecha`, `campana_item_id`, `premio_extra`) VALUES ('$fecha_escaped', $itemId, $amount)";
+                $sql = "INSERT INTO `biartet_premios_diarios` (`fecha`, `campana_item_id`, `premio_extra`, `grupo_id`) VALUES ('$fecha_escaped', $itemId, $amount, $grupo_val)";
             }
             mysqli_query($db, $sql);
         }
 
-        SystemLog::write("Actualizó premios diarios para la fecha: " . $fecha);
+        SystemLog::write("Actualizó premios diarios para la fecha: " . $fecha . " y grupo ID: " . $grupo_id);
         $_SESSION['success_message'] = 'Premios diarios guardados con éxito.';
-        header('Location: daily-prizes?fecha=' . urlencode($fecha));
+        header('Location: daily-prizes?fecha=' . urlencode($fecha) . '&grupo_id=' . urlencode($grupo_id));
         exit();
     }
 

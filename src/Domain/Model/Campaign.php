@@ -13,6 +13,8 @@ class Campaign {
     public $fecha_creacion;
     public $fecha_actualizacion;
     public $items; // Array of CampaignItem objects
+    public $usuario_id;
+    public $grupo_id;
 
     public function __construct(
         $id,
@@ -23,7 +25,9 @@ class Campaign {
         $estado,
         $fecha_creacion,
         $fecha_actualizacion,
-        $items = array()
+        $items = array(),
+        $usuario_id = null,
+        $grupo_id = null
     ) {
         $this->id = $id;
         $this->nombre = $nombre;
@@ -34,6 +38,8 @@ class Campaign {
         $this->fecha_creacion = $fecha_creacion;
         $this->fecha_actualizacion = $fecha_actualizacion;
         $this->items = $items;
+        $this->usuario_id = $usuario_id;
+        $this->grupo_id = $grupo_id;
     }
 
     /**

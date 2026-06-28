@@ -56,6 +56,34 @@ $imagen = isset($product['imagen']) ? $product['imagen'] : '';
             </div>
         </div>
 
+        <?php 
+        $isAdminUser = isset($_SESSION['user']['is_admin']) && (int)$_SESSION['user']['is_admin'] === 1;
+        if ($isAdminUser): 
+            $db = DatabaseConnection::getInstance();
+            $groupsRes = mysqli_query($db, "SELECT * FROM `biartet_grupos` ORDER BY `nombre` ASC");
+            $productGroupId = isset($product) && isset($product['grupo_id']) ? $product['grupo_id'] : null;
+            if ($id && $productGroupId === null) {
+                $pQuery = mysqli_query($db, "SELECT `grupo_id` FROM `biartet_productos` WHERE `id` = $id LIMIT 1");
+                $pRow = $pQuery ? mysqli_fetch_assoc($pQuery) : null;
+                $productGroupId = $pRow ? $pRow['grupo_id'] : null;
+            }
+        ?>
+            <!-- Grupo de Producto (ins7.md) -->
+            <div class="form-group" style="margin-top: 1rem;">
+                <label class="form-label" for="grupo_id">Grupo del Producto (Para organizar la lista de productos por usuario)</label>
+                <select class="form-control" id="grupo_id" name="grupo_id">
+                    <option value="">Global / Todos los Grupos</option>
+                    <?php if ($groupsRes): ?>
+                        <?php while ($g = mysqli_fetch_assoc($groupsRes)): ?>
+                            <option value="<?php echo $g['id']; ?>" <?php echo (int)$productGroupId === (int)$g['id'] ? 'selected' : ''; ?>>
+                                <?php echo htmlspecialchars($g['nombre']); ?>
+                            </option>
+                        <?php endwhile; ?>
+                    <?php endif; ?>
+                </select>
+            </div>
+        <?php endif; ?>
+
         <div style="display: flex; gap: 1rem; justify-content: flex-end; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 1.5rem; margin-top: 1.5rem;">
             <a href="products" class="btn btn-secondary">Cancelar</a>
             <button type="submit" class="btn btn-primary"><?php echo $id ? 'Actualizar Producto' : 'Guardar Producto'; ?></button>

@@ -179,7 +179,9 @@ class ClientController {
                             $createdDateStr = $existing ? date('Y-m-d', strtotime($existing->fecha_creacion)) : date('Y-m-d');
                             $db = DatabaseConnection::getInstance();
                             $createdDateEscaped = mysqli_real_escape_string($db, $createdDateStr);
-                            $prizeQuery = "SELECT `premio_extra` FROM `biartet_premios_diarios` WHERE `fecha` = '$createdDateEscaped' AND `campana_item_id` = " . (int)$campana_item_id . " LIMIT 1";
+                            $userGroupId = isset($_SESSION['user']['grupo_id']) ? (int)$_SESSION['user']['grupo_id'] : 0;
+                            $group_cond = ($userGroupId > 0) ? "`grupo_id` = $userGroupId" : "`grupo_id` IS NULL";
+                            $prizeQuery = "SELECT `premio_extra` FROM `biartet_premios_diarios` WHERE `fecha` = '$createdDateEscaped' AND `campana_item_id` = " . (int)$campana_item_id . " AND $group_cond LIMIT 1";
                             $prizeRes = mysqli_query($db, $prizeQuery);
                             $prizeRow = $prizeRes ? mysqli_fetch_assoc($prizeRes) : null;
                             $premio_aplicado = $prizeRow ? (double)$prizeRow['premio_extra'] * $cantidad_items : 0.00;
@@ -188,7 +190,9 @@ class ClientController {
                         $createdDateStr = date('Y-m-d');
                         $db = DatabaseConnection::getInstance();
                         $createdDateEscaped = mysqli_real_escape_string($db, $createdDateStr);
-                        $prizeQuery = "SELECT `premio_extra` FROM `biartet_premios_diarios` WHERE `fecha` = '$createdDateEscaped' AND `campana_item_id` = " . (int)$campana_item_id . " LIMIT 1";
+                        $userGroupId = isset($_SESSION['user']['grupo_id']) ? (int)$_SESSION['user']['grupo_id'] : 0;
+                        $group_cond = ($userGroupId > 0) ? "`grupo_id` = $userGroupId" : "`grupo_id` IS NULL";
+                        $prizeQuery = "SELECT `premio_extra` FROM `biartet_premios_diarios` WHERE `fecha` = '$createdDateEscaped' AND `campana_item_id` = " . (int)$campana_item_id . " AND $group_cond LIMIT 1";
                         $prizeRes = mysqli_query($db, $prizeQuery);
                         $prizeRow = $prizeRes ? mysqli_fetch_assoc($prizeRes) : null;
                         $premio_aplicado = $prizeRow ? (double)$prizeRow['premio_extra'] * $cantidad_items : 0.00;
@@ -411,7 +415,9 @@ class ClientController {
                             $createdDateStr = date('Y-m-d', strtotime($client->fecha_creacion));
                             $db = DatabaseConnection::getInstance();
                             $createdDateEscaped = mysqli_real_escape_string($db, $createdDateStr);
-                            $prizeQuery = "SELECT `premio_extra` FROM `biartet_premios_diarios` WHERE `fecha` = '$createdDateEscaped' AND `campana_item_id` = " . (int)$client->campana_item_id . " LIMIT 1";
+                            $userGroupId = isset($_SESSION['user']['grupo_id']) ? (int)$_SESSION['user']['grupo_id'] : 0;
+                            $group_cond = ($userGroupId > 0) ? "`grupo_id` = $userGroupId" : "`grupo_id` IS NULL";
+                            $prizeQuery = "SELECT `premio_extra` FROM `biartet_premios_diarios` WHERE `fecha` = '$createdDateEscaped' AND `campana_item_id` = " . (int)$client->campana_item_id . " AND $group_cond LIMIT 1";
                             $prizeRes = mysqli_query($db, $prizeQuery);
                             $prizeRow = $prizeRes ? mysqli_fetch_assoc($prizeRes) : null;
                             $premio_aplicado = $prizeRow ? (double)$prizeRow['premio_extra'] * $qty : 0.00;

@@ -2,6 +2,12 @@
 -- Database name: createso_datosVPS
 -- Table Prefix: biartet_
 
+CREATE TABLE IF NOT EXISTS `biartet_grupos` (
+  `id` INT AUTO_INCREMENT PRIMARY KEY,
+  `nombre` VARCHAR(100) NOT NULL,
+  `fecha_creacion` DATETIME NOT NULL
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
+
 CREATE TABLE IF NOT EXISTS `biartet_users` (
   `id` INT AUTO_INCREMENT PRIMARY KEY,
   `username` VARCHAR(100) NOT NULL UNIQUE,
@@ -11,8 +17,10 @@ CREATE TABLE IF NOT EXISTS `biartet_users` (
   `usuario_dialview` VARCHAR(100) NULL,
   `contrasena_dialview` VARCHAR(255) NULL,
   `fecha_eliminacion` DATETIME NULL,
+  `grupo_id` INT NULL,
   `fecha_creacion` DATETIME NOT NULL,
-  `fecha_actualizacion` DATETIME NOT NULL
+  `fecha_actualizacion` DATETIME NOT NULL,
+  FOREIGN KEY (`grupo_id`) REFERENCES `biartet_grupos`(`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `biartet_productos` (
@@ -22,9 +30,11 @@ CREATE TABLE IF NOT EXISTS `biartet_productos` (
   `imagen` VARCHAR(255) NULL,
   `precio_moneda_local` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
   `usuario_id` INT NULL,
+  `grupo_id` INT NULL,
   `fecha_creacion` DATETIME NOT NULL,
   `fecha_actualizacion` DATETIME NOT NULL,
-  FOREIGN KEY (`usuario_id`) REFERENCES `biartet_users`(`id`) ON DELETE CASCADE
+  FOREIGN KEY (`usuario_id`) REFERENCES `biartet_users`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`grupo_id`) REFERENCES `biartet_grupos`(`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `biartet_campanas` (
@@ -35,9 +45,11 @@ CREATE TABLE IF NOT EXISTS `biartet_campanas` (
   `charla_cierre` TEXT NOT NULL,
   `estado` TINYINT DEFAULT 1,
   `usuario_id` INT NULL,
+  `grupo_id` INT NULL,
   `fecha_creacion` DATETIME NOT NULL,
   `fecha_actualizacion` DATETIME NOT NULL,
-  FOREIGN KEY (`usuario_id`) REFERENCES `biartet_users`(`id`) ON DELETE CASCADE
+  FOREIGN KEY (`usuario_id`) REFERENCES `biartet_users`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`grupo_id`) REFERENCES `biartet_grupos`(`id`) ON DELETE SET NULL
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `biartet_campana_items` (
@@ -119,8 +131,10 @@ CREATE TABLE IF NOT EXISTS `biartet_premios_diarios` (
   `fecha` DATE NOT NULL,
   `campana_item_id` INT NOT NULL,
   `premio_extra` DECIMAL(10,2) NOT NULL DEFAULT 0.00,
-  UNIQUE KEY `fecha_item_unique` (`fecha`, `campana_item_id`),
-  FOREIGN KEY (`campana_item_id`) REFERENCES `biartet_campana_items`(`id`) ON DELETE CASCADE
+  `grupo_id` INT NULL,
+  UNIQUE KEY `idx_fecha_item_grupo` (`fecha`, `campana_item_id`, `grupo_id`),
+  FOREIGN KEY (`campana_item_id`) REFERENCES `biartet_campana_items`(`id`) ON DELETE CASCADE,
+  FOREIGN KEY (`grupo_id`) REFERENCES `biartet_grupos`(`id`) ON DELETE CASCADE
 ) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4 COLLATE=utf8mb4_unicode_ci;
 
 CREATE TABLE IF NOT EXISTS `biartet_metas_diarias` (

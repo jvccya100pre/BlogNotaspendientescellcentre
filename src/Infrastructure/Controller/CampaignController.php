@@ -178,6 +178,8 @@ class CampaignController {
             $itemCount++;
         }
 
+        $grupo_id = isset($_POST['grupo_id']) && $_POST['grupo_id'] !== '' ? (int)$_POST['grupo_id'] : null;
+
         $campaign = new Campaign(
             $id,
             $nombre,
@@ -187,7 +189,9 @@ class CampaignController {
             $estado,
             null,
             null,
-            $items
+            $items,
+            null,
+            $grupo_id
         );
 
         $errors = $campaign->validate();

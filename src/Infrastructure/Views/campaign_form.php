@@ -72,6 +72,29 @@ if (isset($campaign) && $campaign !== null) {
                 </select>
             </div>
 
+            <?php 
+            $isAdminUser = isset($_SESSION['user']['is_admin']) && (int)$_SESSION['user']['is_admin'] === 1;
+            if ($isAdminUser): 
+                $db = DatabaseConnection::getInstance();
+                $groupsRes = mysqli_query($db, "SELECT * FROM `biartet_grupos` ORDER BY `nombre` ASC");
+                $campaignGroupId = isset($campaign) && property_exists($campaign, 'grupo_id') ? $campaign->grupo_id : null;
+            ?>
+                <!-- Grupo de Campaña -->
+                <div class="form-group" style="grid-column: span 2;">
+                    <label class="form-label" for="grupo_id">Grupo de la Campaña (Para organizar usuarios)</label>
+                    <select class="form-control" id="grupo_id" name="grupo_id">
+                        <option value="">Global / Todos los Grupos</option>
+                        <?php if ($groupsRes): ?>
+                            <?php while ($g = mysqli_fetch_assoc($groupsRes)): ?>
+                                <option value="<?php echo $g['id']; ?>" <?php echo (int)$campaignGroupId === (int)$g['id'] ? 'selected' : ''; ?>>
+                                    <?php echo htmlspecialchars($g['nombre']); ?>
+                                </option>
+                            <?php endwhile; ?>
+                        <?php endif; ?>
+                    </select>
+                </div>
+            <?php endif; ?>
+
             <!-- Charla 1: Saludo -->
             <div class="form-group" style="grid-column: span 2;">
                 <label class="form-label" for="charla_saludo">Saludo de Venta (Charla 1 - Max 2000 caracteres) *</label>
