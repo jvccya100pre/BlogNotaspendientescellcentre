@@ -361,11 +361,14 @@ if ($action === 'delete_group') {
                         </select>
                     </div>
 
-                    <div class="form-group" style="margin-top: 1rem;">
-                        <label style="display: flex; align-items: center; gap: 0.5rem; cursor: pointer; font-size: 0.95rem; font-weight: 600;">
-                            <input type="checkbox" name="is_admin" <?php echo ($user && (int)$user['is_admin'] === 1) ? 'checked' : ''; ?> style="width: 18px; height: 18px; cursor: pointer;">
-                            Es Administrador (Privilegios globales)
+                    <div class="form-group" style="margin-top: 1.25rem; background: rgba(255, 255, 255, 0.02); padding: 1rem; border-radius: 8px; border: 1px solid rgba(255, 255, 255, 0.05);">
+                        <label style="display: flex; align-items: center; gap: 0.75rem; cursor: pointer; font-size: 0.95rem; font-weight: bold; color: var(--highlight-color);">
+                            <input type="checkbox" name="is_admin" value="1" <?php echo ($user && (int)$user['is_admin'] === 1) ? 'checked' : ''; ?> style="width: 20px; height: 20px; cursor: pointer; accent-color: var(--highlight-color);">
+                            Asignar Rol de Administrador
                         </label>
+                        <p style="margin: 0.5rem 0 0 2rem; font-size: 0.8rem; color: rgba(255,255,255,0.5); line-height: 1.4;">
+                            Al activar esta opción, el usuario tendrá acceso total al Panel Administrativo, pudiendo gestionar campañas, productos, precios, configurar comisiones, premios diarios y registrar/modificar a otros administradores del sistema.
+                        </p>
                     </div>
 
                     <div style="display: flex; gap: 1rem; justify-content: flex-end; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 1.5rem; margin-top: 2rem;">
