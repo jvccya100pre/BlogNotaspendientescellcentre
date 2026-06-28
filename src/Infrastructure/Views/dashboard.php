@@ -37,14 +37,17 @@
     </div>
 
     <!-- View Filter Status (Navbar navigation filtering) -->
-    <div id="view_filter_alert" class="alert alert-info" style="display:none; align-items:center; justify-content:space-between; width:100%; margin-bottom:1.5rem; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); color: #93c5fd;">
+    <div id="view_filter_alert" class="alert alert-info"
+        style="display:none; align-items:center; justify-content:space-between; width:100%; margin-bottom:1.5rem; background: rgba(59, 130, 246, 0.1); border: 1px solid rgba(59, 130, 246, 0.3); color: #93c5fd;">
         <div style="display:flex; align-items:center; gap:0.5rem;">
             <svg style="width:20px;height:20px;fill:currentColor" viewBox="0 0 24 24">
-                <path d="M12,2A10,10 0 1,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 1,0 20,12A8,8 0 0,0 12,4M11,17H13V11H11V17M11,9H13V7H11V9Z" />
+                <path
+                    d="M12,2A10,10 0 1,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 1,0 20,12A8,8 0 0,0 12,4M11,17H13V11H11V17M11,9H13V7H11V9Z" />
             </svg>
             <span id="view_filter_message">Mostrando sección filtrada.</span>
         </div>
-        <a href="./" class="btn btn-secondary" style="padding: 0.25rem 0.6rem; font-size: 0.8rem; height: auto; text-decoration: none; border-color: rgba(255,255,255,0.2); line-height: 1.2;">
+        <a href="./" class="btn btn-secondary"
+            style="padding: 0.25rem 0.6rem; font-size: 0.8rem; height: auto; text-decoration: none; border-color: rgba(255,255,255,0.2); line-height: 1.2;">
             Mostrar Todo
         </a>
     </div>
@@ -127,7 +130,7 @@
                         <th>Ubicación y Dirección</th>
                         <th>Estado de Llamada</th>
                         <th>Lapsos (Día/Hora)</th>
-                        <th style="width: 150px; text-align: center;">Acciones</th>
+                        <th style="width: 180px; text-align: center;">Acciones</th>
                     </tr>
                 </thead>
                 <tbody>
@@ -149,7 +152,8 @@
                             data-status="<?php echo htmlspecialchars($c->estado_llamada); ?>">
 
                             <td style="font-weight:600; color:var(--highlight-color);">
-                                <?php echo htmlspecialchars($c->identificador_unico); ?></td>
+                                <?php echo htmlspecialchars($c->identificador_unico); ?>
+                            </td>
                             <td style="font-weight:500;"><?php echo htmlspecialchars($c->nombre); ?></td>
                             <td><?php echo htmlspecialchars($c->telefono); ?></td>
                             <td>
@@ -201,6 +205,25 @@
                                         <svg style="width:16px;height:16px;fill:currentColor" viewBox="0 0 24 24">
                                             <path
                                                 d="M19,4H15.5L14.5,3H9.5L8.5,4H5V6H19M6,19A2,2 0 0,0 8,21H16A2,2 0 0,0 18,19V7H6V19Z" />
+                                        </svg>
+                                    </a>
+                                    <?php
+                                    $wa_msg = "*Datos de Cliente Pendiente*\n\n"
+                                        /*. "*ID Único:* " . $c->identificador_unico . "\n" */
+                                        . "*Nombre:* " . $c->nombre . "\n"
+                                        . "*Teléfono:* " . $c->telefono . "\n"
+                                        . "*Ubicación:* " . implode(', ', array_filter(array($estName, $muniName, $cityName))) . "\n"
+                                        . "*Dirección:* " . $c->direccion . "\n"
+                                        . "*Estado:* " . $c->estado_llamada . "\n"
+                                        . "*Lapsos:* " . ($c->lapso_dias ? $c->lapso_dias . ' ' : '') . ($c->lapso_tiempo ? $c->lapso_tiempo : '');
+                                    $wa_url = "https://api.whatsapp.com/send?phone=584126317284&text=" . rawurlencode($wa_msg);
+                                    ?>
+
+                                    <a href="<?php echo $wa_url; ?>" target="_blank" class="btn btn-whatsapp action-btn"
+                                        title="Enviar a WhatsApp" style="border-radius:50%;background-color: yellow;">
+                                        <svg style="width:26px;height:26px;fill:#25D366;" viewBox="0 0 24 24">
+                                            <path
+                                                d="M12.04 2C6.58 2 2.13 6.45 2.13 11.91C2.13 13.66 2.59 15.36 3.47 16.86L2 22L7.3 20.61C8.74 21.39 10.37 21.8 12.04 21.8C17.5 21.8 21.95 17.35 21.95 11.9C21.95 9.26 20.92 6.78 19.05 4.91C17.18 3.04 14.7 2 12.04 2M12.05 3.67C14.25 3.67 16.31 4.53 17.87 6.09C19.42 7.65 20.28 9.72 20.28 11.91C20.28 16.45 16.58 20.15 12.04 20.15C10.56 20.15 9.11 19.76 7.85 19.02L7.55 18.84L4.4 19.67L5.24 16.59L5.05 16.29C4.23 14.99 3.79 13.48 3.79 11.91C3.79 7.37 7.5 3.67 12.05 3.67M8.53 7.33C8.37 7.33 8.1 7.39 7.87 7.64C7.65 7.89 7 8.5 7 9.71C7 10.93 7.89 12.1 8.01 12.27C8.13 12.44 9.76 14.94 12.25 16C12.84 16.25 13.3 16.41 13.66 16.52C14.25 16.71 14.79 16.69 15.22 16.62C15.7 16.55 16.69 16.02 16.89 15.45C17.1 14.87 17.1 14.39 17.04 14.29C16.97 14.19 16.81 14.13 16.56 14.01C16.31 13.88 15.09 13.28 14.86 13.2C14.64 13.12 14.47 13.08 14.31 13.32C14.15 13.57 13.69 14.11 13.55 14.27C13.41 14.42 13.27 14.44 13.03 14.31C12.78 14.19 11.98 13.93 11.03 13.08C10.29 12.42 9.79 11.61 9.64 11.36C9.5 11.12 9.62 10.99 9.74 10.87C9.86 10.75 10 10.57 10.12 10.43C10.25 10.29 10.29 10.19 10.37 10.03C10.45 9.87 10.41 9.72 10.35 9.6C10.29 9.48 9.83 8.37 9.64 7.91C9.46 7.46 9.27 7.52 9.13 7.51C9 7.5 8.84 7.5 8.68 7.5C8.53 7.5 8.53 7.33 8.53 7.33Z" />
                                         </svg>
                                     </a>
                                 </div>

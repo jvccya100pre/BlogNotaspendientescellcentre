@@ -1,10 +1,9 @@
 Sin tocar el modelo de conexion MYSQL
 
-Paso 1: Generar un archivo "necesario\escimu.sql" que haga "INSERT INTO" con el nombre de todos los "estados, ciudades y municipios" de venezuela segun sintaxis de "necesario\faltante.sql" y del workspace, Sin alterar nada del contenido  fuera de la carpeta "necesario" ni las sintaxis de php,js,html, etc. 
 
-Paso 2: Agregar boton enviar a whatsapp "584126317284" en "Total Clientes Pendientes" debajo de "Acciones" al lado del boton eliminar debe tener un icono de whatsapp.
+Paso 1: En la tabla "Total Clientes Pendientes" Agregar boton enviar a whatsapp "584126317284" debajo de "Acciones" al lado del boton eliminar debe tener un icono de whatsapp. colocarlo de color verde
 
-paso 3: sustituir "Llamar en (Días) *" por "imput type='date'" para agendar llamadas en una fecha establesida por el usuario y que suenen la alarma en esa fecha. sin tocar la conexion "mysqli".  por favor usar  "alarma.mp3" para la alarma sonora. y que suene cuando secumpla la fecha agendada.
+paso 2: sustituir "Llamar en (Días) *" por "imput type='date'" para agendar llamadas en una fecha establesida por el usuario y que suenen la alarma en esa fecha. sin tocar la conexion "mysqli".  por favor usar  "alarma.mp3" para la alarma sonora. y que suene cuando secumpla la fecha agendada.
 
 Paso 4: 
 
