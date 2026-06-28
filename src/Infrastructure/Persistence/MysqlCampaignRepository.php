@@ -39,7 +39,8 @@ class MysqlCampaignRepository {
      */
     public function findAllActive() {
         try {
-            $result = mysqli_query($this->db, "SELECT * FROM `biartet_campanas` WHERE `estado` = 1 ORDER BY `nombre` ASC");
+            $userId = isset($_SESSION['user']['id']) ? (int)$_SESSION['user']['id'] : 0;
+            $result = mysqli_query($this->db, "SELECT * FROM `biartet_campanas` WHERE `estado` = 1 AND (`usuario_id` IS NULL OR `usuario_id` = $userId) ORDER BY `nombre` ASC");
             if (!$result) {
                 return array();
             }
@@ -60,7 +61,8 @@ class MysqlCampaignRepository {
      */
     public function findAll() {
         try {
-            $result = mysqli_query($this->db, "SELECT * FROM `biartet_campanas` ORDER BY `fecha_creacion` DESC");
+            $userId = isset($_SESSION['user']['id']) ? (int)$_SESSION['user']['id'] : 0;
+            $result = mysqli_query($this->db, "SELECT * FROM `biartet_campanas` WHERE (`usuario_id` IS NULL OR `usuario_id` = $userId) ORDER BY `fecha_creacion` DESC");
             if (!$result) {
                 return array();
             }
@@ -91,9 +93,13 @@ class MysqlCampaignRepository {
 
             if (empty($campaign->id)) {
                 // INSERT
+                $userId = isset($_SESSION['user']['id']) ? (int)$_SESSION['user']['id'] : 0;
+                $isAdmin = isset($_SESSION['user']['is_admin']) ? (int)$_SESSION['user']['is_admin'] : 0;
+                $usuario_id = ($isAdmin === 1) ? "NULL" : $userId;
+
                 $sql = "INSERT INTO `biartet_campanas` 
-                    (`nombre`, `charla_saludo`, `charla_desarrollo`, `charla_cierre`, `estado`, `fecha_creacion`, `fecha_actualizacion`) 
-                    VALUES ($nombre, $charla_saludo, $charla_desarrollo, $charla_cierre, $estado, '$now', '$now')";
+                    (`nombre`, `charla_saludo`, `charla_desarrollo`, `charla_cierre`, `estado`, `fecha_creacion`, `fecha_actualizacion`, `usuario_id`) 
+                    VALUES ($nombre, $charla_saludo, $charla_desarrollo, $charla_cierre, $estado, '$now', '$now', $usuario_id)";
                 if (mysqli_query($this->db, $sql)) {
                     $campaignId = mysqli_insert_id($this->db);
                     $this->saveItems($campaignId, $campaign->items);
@@ -135,14 +141,15 @@ class MysqlCampaignRepository {
         // Insert new items
         foreach ($items as $item) {
             if (empty($item->nombre_producto)) continue;
+            $productoId = (int)$item->producto_id;
             $nombre = "'" . mysqli_real_escape_string($this->db, $item->nombre_producto) . "'";
             $precio = (double)$item->precio;
+            $precioLocal = (double)$item->precio_moneda_local;
             $comision = (double)$item->comision_venta;
-            $premio = (double)$item->premio_extra;
 
             $sql = "INSERT INTO `biartet_campana_items` 
-                (`campana_id`, `nombre_producto`, `precio`, `comision_venta`, `premio_extra`) 
-                VALUES ($campaignId, $nombre, $precio, $comision, $premio)";
+                (`campana_id`, `producto_id`, `nombre_producto`, `precio`, `precio_moneda_local`, `comision_venta`) 
+                VALUES ($campaignId, $productoId, $nombre, $precio, $precioLocal, $comision)";
             mysqli_query($this->db, $sql);
         }
     }
@@ -180,10 +187,11 @@ class MysqlCampaignRepository {
                 $items[] = new CampaignItem(
                     (int)$row['id'],
                     (int)$row['campana_id'],
+                    (int)$row['producto_id'],
                     $row['nombre_producto'],
                     (double)$row['precio'],
-                    (double)$row['comision_venta'],
-                    (double)$row['premio_extra']
+                    (double)$row['precio_moneda_local'],
+                    (double)$row['comision_venta']
                 );
             }
             return $items;
@@ -211,10 +219,11 @@ class MysqlCampaignRepository {
             return new CampaignItem(
                 (int)$row['id'],
                 (int)$row['campana_id'],
+                (int)$row['producto_id'],
                 $row['nombre_producto'],
                 (double)$row['precio'],
-                (double)$row['comision_venta'],
-                (double)$row['premio_extra']
+                (double)$row['precio_moneda_local'],
+                (double)$row['comision_venta']
             );
         } catch (Exception $e) {
             return null;
@@ -234,7 +243,8 @@ class MysqlCampaignRepository {
             (int)$row['estado'],
             $row['fecha_creacion'],
             $row['fecha_actualizacion'],
-            $items
+            $items,
+            $row['usuario_id'] !== null ? (int)$row['usuario_id'] : null
         );
     }
 }

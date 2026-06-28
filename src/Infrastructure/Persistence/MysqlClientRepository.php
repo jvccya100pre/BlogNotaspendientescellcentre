@@ -60,7 +60,8 @@ class MysqlClientRepository implements ClientRepositoryInterface {
      */
     public function findAllActive() {
         try {
-            $result = mysqli_query($this->db, "SELECT * FROM `biartet_clientes` WHERE `estado` = 1 ORDER BY `fecha_creacion` DESC");
+            $vendedor_id = isset($_SESSION['user']['id']) ? (int)$_SESSION['user']['id'] : 0;
+            $result = mysqli_query($this->db, "SELECT * FROM `biartet_clientes` WHERE `estado` = 1 AND `vendedor_id` = $vendedor_id ORDER BY `fecha_creacion` DESC");
             if (!$result) {
                 return array();
             }
@@ -82,7 +83,8 @@ class MysqlClientRepository implements ClientRepositoryInterface {
     public function findAllActiveByDate($dateString) {
         try {
             $date_escaped = mysqli_real_escape_string($this->db, $dateString);
-            $result = mysqli_query($this->db, "SELECT * FROM `biartet_clientes` WHERE `estado` = 1 AND (DATE(`fecha_creacion`) = '$date_escaped' OR DATE(`fecha_actualizacion`) = '$date_escaped') ORDER BY `fecha_creacion` DESC");
+            $vendedor_id = isset($_SESSION['user']['id']) ? (int)$_SESSION['user']['id'] : 0;
+            $result = mysqli_query($this->db, "SELECT * FROM `biartet_clientes` WHERE `estado` = 1 AND `vendedor_id` = $vendedor_id AND (DATE(`fecha_creacion`) = '$date_escaped' OR DATE(`fecha_actualizacion`) = '$date_escaped') ORDER BY `fecha_creacion` DESC");
             if (!$result) {
                 return array();
             }
@@ -126,12 +128,13 @@ class MysqlClientRepository implements ClientRepositoryInterface {
             $comision_aplicada = $client->comision_aplicada !== null ? (double)$client->comision_aplicada : 0.00;
             $premio_aplicado = $client->premio_aplicado !== null ? (double)$client->premio_aplicado : 0.00;
             $precio_aplicado = $client->precio_aplicado !== null ? (double)$client->precio_aplicado : 0.00;
+            $vendedor_id = $client->vendedor_id !== null ? (int)$client->vendedor_id : "NULL";
 
             if (empty($client->id)) {
                 // INSERT
                 $sql = "INSERT INTO `biartet_clientes` 
-                    (`identificador_unico`, `telefono`, `nombre`, `direccion`, `estado_id`, `municipio_id`, `ciudad_id`, `archivo_adjunto`, `estado_llamada`, `observacion`, `lapso_tiempo`, `lapso_dias`, `estado`, `fecha_creacion`, `fecha_actualizacion`, `posponer_hasta`, `campana_id`, `campana_item_id`, `cantidad_items`, `comision_aplicada`, `premio_aplicado`, `precio_aplicado`) 
-                    VALUES ($identificador_unico, $telefono, $nombre, $direccion, $estado_id, $municipio_id, $ciudad_id, $archivo_adjunto, $estado_llamada, $observacion, $lapso_tiempo, $lapso_dias, $estado, $fecha_creacion, $fecha_actualizacion, $posponer_hasta, $campana_id, $campana_item_id, $cantidad_items, $comision_aplicada, $premio_aplicado, $precio_aplicado)";
+                    (`identificador_unico`, `telefono`, `nombre`, `direccion`, `estado_id`, `municipio_id`, `ciudad_id`, `archivo_adjunto`, `estado_llamada`, `observacion`, `lapso_tiempo`, `lapso_dias`, `estado`, `fecha_creacion`, `fecha_actualizacion`, `posponer_hasta`, `campana_id`, `campana_item_id`, `cantidad_items`, `comision_aplicada`, `premio_aplicado`, `precio_aplicado`, `vendedor_id`) 
+                    VALUES ($identificador_unico, $telefono, $nombre, $direccion, $estado_id, $municipio_id, $ciudad_id, $archivo_adjunto, $estado_llamada, $observacion, $lapso_tiempo, $lapso_dias, $estado, $fecha_creacion, $fecha_actualizacion, $posponer_hasta, $campana_id, $campana_item_id, $cantidad_items, $comision_aplicada, $premio_aplicado, $precio_aplicado, $vendedor_id)";
                 return (bool)mysqli_query($this->db, $sql);
             } else {
                 // UPDATE
@@ -155,7 +158,8 @@ class MysqlClientRepository implements ClientRepositoryInterface {
                     `cantidad_items` = $cantidad_items,
                     `comision_aplicada` = $comision_aplicada,
                     `premio_aplicado` = $premio_aplicado,
-                    `precio_aplicado` = $precio_aplicado
+                    `precio_aplicado` = $precio_aplicado,
+                    `vendedor_id` = $vendedor_id
                     WHERE `id` = $id";
                 return (bool)mysqli_query($this->db, $sql);
             }
@@ -329,7 +333,8 @@ class MysqlClientRepository implements ClientRepositoryInterface {
             isset($row['cantidad_items']) ? (int)$row['cantidad_items'] : 1,
             isset($row['comision_aplicada']) ? (double)$row['comision_aplicada'] : 0.00,
             isset($row['premio_aplicado']) ? (double)$row['premio_aplicado'] : 0.00,
-            isset($row['precio_aplicado']) ? (double)$row['precio_aplicado'] : 0.00
+            isset($row['precio_aplicado']) ? (double)$row['precio_aplicado'] : 0.00,
+            isset($row['vendedor_id']) ? (int)$row['vendedor_id'] : null
         );
     }
 

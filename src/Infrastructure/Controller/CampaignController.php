@@ -53,16 +53,23 @@ class CampaignController {
     public function showCreate() {
         $this->checkAuth();
 
+        $db = DatabaseConnection::getInstance();
+        $prodRes = mysqli_query($db, "SELECT * FROM `biartet_productos` ORDER BY `nombre` ASC");
+        $productsList = array();
+        if ($prodRes) {
+            while ($row = mysqli_fetch_assoc($prodRes)) {
+                $productsList[] = $row;
+            }
+        }
+
         $this->render('campaign_form', array(
             'title' => 'Crear Campaña',
             'campaign' => null,
+            'productsList' => $productsList,
             'errors' => array()
         ));
     }
 
-    /**
-     * Show campaign editing form
-     */
     public function showEdit() {
         $this->checkAuth();
 
@@ -75,16 +82,38 @@ class CampaignController {
             exit();
         }
 
+        // Check ownership
+        $userId = isset($_SESSION['user']['id']) ? (int)$_SESSION['user']['id'] : 0;
+        $isAdmin = isset($_SESSION['user']['is_admin']) ? (int)$_SESSION['user']['is_admin'] : 0;
+        $ownerId = $campaign->usuario_id !== null ? (int)$campaign->usuario_id : null;
+        if ($ownerId !== null && $ownerId !== $userId) {
+            $_SESSION['error_message'] = 'Acceso denegado a esta campaña.';
+            header('Location: ./campaigns');
+            exit();
+        }
+        if ($ownerId === null && $isAdmin !== 1) {
+            $_SESSION['error_message'] = 'Solo los administradores pueden editar campañas globales.';
+            header('Location: ./campaigns');
+            exit();
+        }
+
+        $db = DatabaseConnection::getInstance();
+        $prodRes = mysqli_query($db, "SELECT * FROM `biartet_productos` ORDER BY `nombre` ASC");
+        $productsList = array();
+        if ($prodRes) {
+            while ($row = mysqli_fetch_assoc($prodRes)) {
+                $productsList[] = $row;
+            }
+        }
+
         $this->render('campaign_form', array(
             'title' => 'Editar Campaña',
             'campaign' => $campaign,
+            'productsList' => $productsList,
             'errors' => array()
         ));
     }
 
-    /**
-     * Process creation or update submission
-     */
     public function save() {
         $this->checkAuth();
 
@@ -95,6 +124,29 @@ class CampaignController {
         $charla_cierre = isset($_POST['charla_cierre']) ? trim($_POST['charla_cierre']) : '';
         $estado = isset($_POST['estado']) ? (int)$_POST['estado'] : 1;
 
+        $userId = isset($_SESSION['user']['id']) ? (int)$_SESSION['user']['id'] : 0;
+        $isAdmin = isset($_SESSION['user']['is_admin']) ? (int)$_SESSION['user']['is_admin'] : 0;
+
+        if ($id) {
+            $campaign = $this->campaignRepository->findById($id);
+            if ($campaign === null) {
+                $_SESSION['error_message'] = 'La campaña especificada no existe.';
+                header('Location: ./campaigns');
+                exit();
+            }
+            $ownerId = $campaign->usuario_id !== null ? (int)$campaign->usuario_id : null;
+            if ($ownerId !== null && $ownerId !== $userId) {
+                $_SESSION['error_message'] = 'Acceso denegado.';
+                header('Location: ./campaigns');
+                exit();
+            }
+            if ($ownerId === null && $isAdmin !== 1) {
+                $_SESSION['error_message'] = 'Solo los administradores pueden editar campañas globales.';
+                header('Location: ./campaigns');
+                exit();
+            }
+        }
+
         // Process up to 30 items
         $itemsData = isset($_POST['items']) ? $_POST['items'] : array();
         $items = array();
@@ -102,20 +154,26 @@ class CampaignController {
 
         foreach ($itemsData as $itemRow) {
             if ($itemCount >= 30) break;
-            $nombre_producto = isset($itemRow['nombre_producto']) ? trim($itemRow['nombre_producto']) : '';
-            if (empty($nombre_producto)) continue;
+            $producto_id = isset($itemRow['producto_id']) ? (int)$itemRow['producto_id'] : 0;
+            if ($producto_id <= 0) continue;
+
+            $db = DatabaseConnection::getInstance();
+            $prodRes = mysqli_query($db, "SELECT `nombre` FROM `biartet_productos` WHERE `id` = $producto_id LIMIT 1");
+            $prodRow = $prodRes ? mysqli_fetch_assoc($prodRes) : null;
+            $nombre_producto = $prodRow ? $prodRow['nombre'] : 'Producto Desconocido';
 
             $precio = isset($itemRow['precio']) ? (double)$itemRow['precio'] : 0.0;
+            $precio_moneda_local = isset($itemRow['precio_moneda_local']) ? (double)$itemRow['precio_moneda_local'] : 0.0;
             $comision_venta = isset($itemRow['comision_venta']) ? (double)$itemRow['comision_venta'] : 0.0;
-            $premio_extra = isset($itemRow['premio_extra']) ? (double)$itemRow['premio_extra'] : 0.0;
 
             $items[] = new CampaignItem(
                 null,
                 $id,
+                $producto_id,
                 $nombre_producto,
                 $precio,
-                $comision_venta,
-                $premio_extra
+                $precio_moneda_local,
+                $comision_venta
             );
             $itemCount++;
         }
@@ -134,9 +192,19 @@ class CampaignController {
 
         $errors = $campaign->validate();
         if (!empty($errors)) {
+            $db = DatabaseConnection::getInstance();
+            $prodRes = mysqli_query($db, "SELECT * FROM `biartet_productos` ORDER BY `nombre` ASC");
+            $productsList = array();
+            if ($prodRes) {
+                while ($row = mysqli_fetch_assoc($prodRes)) {
+                    $productsList[] = $row;
+                }
+            }
+
             $this->render('campaign_form', array(
                 'title' => empty($id) ? 'Crear Campaña' : 'Editar Campaña',
                 'campaign' => $campaign,
+                'productsList' => $productsList,
                 'errors' => $errors
             ));
             return;
@@ -144,30 +212,60 @@ class CampaignController {
 
         $savedId = $this->campaignRepository->save($campaign);
         if ($savedId !== false) {
+            SystemLog::write((empty($id) ? "Creó" : "Actualizó") . " campaña: " . $nombre);
             $_SESSION['success_message'] = empty($id) 
                 ? 'Campaña creada con éxito.' 
                 : 'Campaña actualizada con éxito.';
             header('Location: ./campaigns');
             exit();
         } else {
+            $db = DatabaseConnection::getInstance();
+            $prodRes = mysqli_query($db, "SELECT * FROM `biartet_productos` ORDER BY `nombre` ASC");
+            $productsList = array();
+            if ($prodRes) {
+                while ($row = mysqli_fetch_assoc($prodRes)) {
+                    $productsList[] = $row;
+                }
+            }
+
             $this->render('campaign_form', array(
                 'title' => empty($id) ? 'Crear Campaña' : 'Editar Campaña',
                 'campaign' => $campaign,
+                'productsList' => $productsList,
                 'errors' => array('global' => 'Error al guardar la campaña en la base de datos.')
             ));
         }
     }
 
-    /**
-     * Delete a campaign
-     */
     public function delete() {
         $this->checkAuth();
 
         $id = isset($_GET['id']) ? (int)$_GET['id'] : 0;
+        $campaign = $this->campaignRepository->findById($id);
+        if ($campaign === null) {
+            $_SESSION['error_message'] = 'La campaña especificada no existe.';
+            header('Location: ./campaigns');
+            exit();
+        }
+
+        $userId = isset($_SESSION['user']['id']) ? (int)$_SESSION['user']['id'] : 0;
+        $isAdmin = isset($_SESSION['user']['is_admin']) ? (int)$_SESSION['user']['is_admin'] : 0;
+        $ownerId = $campaign->usuario_id !== null ? (int)$campaign->usuario_id : null;
+        if ($ownerId !== null && $ownerId !== $userId) {
+            $_SESSION['error_message'] = 'Acceso denegado.';
+            header('Location: ./campaigns');
+            exit();
+        }
+        if ($ownerId === null && $isAdmin !== 1) {
+            $_SESSION['error_message'] = 'Solo los administradores pueden eliminar campañas globales.';
+            header('Location: ./campaigns');
+            exit();
+        }
+
         $result = $this->campaignRepository->delete($id);
 
         if ($result) {
+            SystemLog::write("Eliminó campaña con ID: " . $id);
             $_SESSION['success_message'] = 'Campaña eliminada con éxito.';
         } else {
             $_SESSION['error_message'] = 'Error al intentar eliminar la campaña.';

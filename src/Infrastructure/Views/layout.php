@@ -12,6 +12,195 @@
     <!-- Tom Select CDN (Paso 4) -->
     <link href="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/css/tom-select.css" rel="stylesheet">
     <script src="https://cdn.jsdelivr.net/npm/tom-select@2.2.2/dist/js/tom-select.complete.min.js"></script>
+
+    <style>
+        /* Self-contained Navbar and Dropdown Styles (ins6.md) */
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 1rem 2rem;
+            background: rgba(18, 2, 2, 0.95);
+            backdrop-filter: blur(10px);
+            border-bottom: 1px solid rgba(255, 255, 255, 0.05);
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+
+        .navbar-brand {
+            font-size: 1.5rem;
+            font-weight: 700;
+            color: #ffffff;
+            text-decoration: none;
+            display: flex;
+            align-items: center;
+            gap: 0.5rem;
+        }
+
+        .navbar-brand span {
+            color: var(--highlight-color, #ffdf20);
+        }
+
+        .navbar-nav {
+            display: flex;
+            list-style: none;
+            align-items: center;
+            gap: 10px;
+            margin: 0;
+            padding: 0;
+        }
+
+        .nav-item {
+            position: relative;
+        }
+
+        .nav-link {
+            color: rgba(255, 255, 255, 0.8);
+            text-decoration: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            padding: 0.4rem 0.8rem;
+            border-radius: 6px;
+            transition: all 0.25s ease;
+            display: inline-flex;
+            align-items: center;
+        }
+
+        .nav-link:hover,
+        .nav-link:focus {
+            color: var(--highlight-color, #ffdf20);
+            background: rgba(255, 255, 255, 0.05);
+        }
+
+        /* Dropdown Menu styling */
+        .dropdown-menu {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            min-width: 200px;
+            background: rgba(30, 8, 9, 0.98);
+            backdrop-filter: blur(15px);
+            -webkit-backdrop-filter: blur(15px);
+            border: 1px solid rgba(255, 255, 255, 0.08);
+            box-shadow: 0 10px 30px rgba(0, 0, 0, 0.5);
+            border-radius: 8px;
+            padding: 0.5rem 0;
+            margin-top: 0.5rem;
+            list-style: none;
+            z-index: 150;
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(10px);
+            transition: opacity 0.25s ease, transform 0.25s ease, visibility 0.25s;
+        }
+
+        .dropdown.show .dropdown-menu {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+
+        .dropdown-icon {
+            display: inline-block;
+            transition: transform 0.25s ease;
+        }
+
+        .dropdown.show .dropdown-icon {
+            transform: rotate(180deg);
+        }
+
+        .dropdown-item {
+            display: block;
+            padding: 0.6rem 1.2rem;
+            color: rgba(255, 255, 255, 0.85);
+            text-decoration: none;
+            font-size: 0.8rem;
+            font-weight: 600;
+            letter-spacing: 0.05em;
+            transition: all 0.2s ease;
+        }
+
+        .dropdown-item:hover {
+            background: rgba(255, 255, 255, 0.05);
+            color: var(--highlight-color, #ffdf20);
+            padding-left: 1.5rem;
+        }
+
+        .navbar-user {
+            display: flex;
+            align-items: center;
+            gap: 1rem;
+        }
+
+        .user-tag {
+            font-size: 0.9rem;
+            color: rgba(255, 255, 255, 0.7);
+            background: rgba(255, 255, 255, 0.08);
+            padding: 0.35rem 0.8rem;
+            border-radius: 20px;
+        }
+
+        @media (max-width: 768px) {
+            .navbar {
+                flex-direction: column;
+                gap: 1rem;
+                padding: 1rem 1.5rem;
+                text-align: center;
+            }
+
+            .navbar-nav {
+                width: 100%;
+                justify-content: center;
+                gap: 0.5rem;
+                flex-direction: column;
+            }
+
+            .nav-item {
+                width: 100%;
+            }
+
+            .nav-link {
+                width: 100%;
+                justify-content: center;
+                padding: 0.6rem;
+            }
+
+            .dropdown-menu {
+                position: static;
+                display: none;
+                opacity: 1;
+                visibility: visible;
+                transform: none;
+                box-shadow: none;
+                background: rgba(0, 0, 0, 0.2);
+                width: 100%;
+                margin-top: 0.25rem;
+                border-radius: 6px;
+            }
+
+            .dropdown.show .dropdown-menu {
+                display: block;
+            }
+
+            .dropdown-item {
+                text-align: center;
+                padding: 0.6rem;
+            }
+
+            .dropdown-item:hover {
+                padding-left: 1.2rem;
+            }
+
+            .navbar-user {
+                width: 100%;
+                justify-content: center;
+                flex-direction: column;
+                gap: 0.5rem;
+            }
+        }
+    </style>
 </head>
 
 <body>
@@ -26,20 +215,42 @@
             <span>CallCenter</span>
         </a>
 
-        <?php if (isset($_SESSION['user'])): ?>
+        <?php if (isset($_SESSION['user'])): 
+            $db = DatabaseConnection::getInstance();
+            $usernameEscaped = mysqli_real_escape_string($db, $_SESSION['user']['username']);
+            $isAdminRes = mysqli_query($db, "SELECT `is_admin` FROM `biartet_users` WHERE `username` = '$usernameEscaped' LIMIT 1");
+            $isAdminRow = $isAdminRes ? mysqli_fetch_assoc($isAdminRes) : null;
+            $isAdmin = ($isAdminRow && (int)$isAdminRow['is_admin'] === 1);
+        ?>
             <!--Agregar 'style' de letra para los 3 'a href' y quitar el subrayado que indica link separando 10px entra palabras y colocar color amarillo a las letras -->
             <div class="navbar-nav">
 
-                <a href="./" style='color:yellow; font-weight:bold; margin-right:10px;'>INICIO</a>
-                <a href="./?view=pendientes" style='color:yellow; font-weight:bold; margin-right:10px;'>PENDIENTES</a>
-                <a href="./?view=exitosas" style='color:yellow; font-weight:bold; margin-right:10px;'>EXITOSAS</a>
-                <a href="campaigns" style='color:yellow; font-weight:bold; margin-right:10px;'>CAMPAÑAS</a>
+                <a href="./" style='color:yellow; font-weight:bold; text-decoration:none;'>INICIO</a>
+                <a href="./?view=pendientes" style='color:yellow; font-weight:bold; text-decoration:none;'>PENDIENTES</a>
+                <a href="./?view=exitosas" style='color:yellow; font-weight:bold; text-decoration:none;'>EXITOSAS</a>
+                <a href="campaigns" style='color:yellow; font-weight:bold; text-decoration:none;'>CAMPAÑAS</a>
+
+                <!-- Dropdown interactivo de Herramientas -->
+                <div class="nav-item dropdown" style="position: relative; display: inline-block;">
+                    <a href="#" class="dropdown-toggle" style='color:yellow; font-weight:bold; text-decoration:none; display: flex; align-items: center; gap: 4px;'>
+                        📢 HERRAMIENTAS <span class="dropdown-icon" style="font-size:0.6rem; vertical-align:middle; display:inline-block; transition: transform 0.25s ease;">▼</span>
+                    </a>
+                    <div class="dropdown-menu">
+                        <a href="memorandums" class="dropdown-item">📢 Memorándums</a>
+                        <a href="products" class="dropdown-item">📦 Catálogo de Productos</a>
+                        <?php if ($isAdmin): ?>
+                            <a href="Admin/" class="dropdown-item">👥 Panel Admin (Usuarios)</a>
+                            <a href="daily-prizes" class="dropdown-item">💰 Control de Premios/Día</a>
+                            <a href="logs" class="dropdown-item">📋 Logs del Sistema</a>
+                        <?php endif; ?>
+                    </div>
+                </div>
             </div>
 
-            <div class="navbar-user">
+            <div class="navbar-user" style="display: flex; align-items: center; gap: 15px;">
                 <span class="user-tag"><?php echo htmlspecialchars($_SESSION['user']['username']); ?></span>
                 <a href="logout" class="btn btn-secondary btn-danger action-btn"
-                    style="padding: 0.35rem 0.8rem; font-size: 0.85rem;">Salir</a>
+                    style="padding: 0.35rem 0.8rem; font-size: 0.85rem; text-decoration: none;">Salir</a>
             </div>
         <?php endif; ?>
     </nav>

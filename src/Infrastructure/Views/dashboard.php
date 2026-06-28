@@ -1,4 +1,38 @@
 <?php
+// Daily sales target logic
+$db = DatabaseConnection::getInstance();
+$loggedUserId = isset($_SESSION['user']['id']) ? (int)$_SESSION['user']['id'] : 0;
+$todayDate = date('Y-m-d');
+
+// 1. Fetch today's sales target for the current user
+$targetQuery = "SELECT `cantidad_meta` FROM `biartet_metas_diarias` WHERE `vendedor_id` = $loggedUserId AND `fecha` = '$todayDate' LIMIT 1";
+$targetRes = mysqli_query($db, $targetQuery);
+$targetRow = $targetRes ? mysqli_fetch_assoc($targetRes) : null;
+$meta_diaria = $targetRow ? (int)$targetRow['cantidad_meta'] : 0;
+
+// 2. Count actual sales for current user today
+$salesQuery = "SELECT COUNT(*) FROM `biartet_clientes` WHERE `vendedor_id` = $loggedUserId AND `estado_llamada` = 'Exito pedido pendiente' AND DATE(`fecha_actualizacion`) = '$todayDate' AND `estado` = 1";
+$salesRes = mysqli_query($db, $salesQuery);
+$salesRow = $salesRes ? mysqli_fetch_row($salesRes) : null;
+$ventas_hoy = $salesRow ? (int)$salesRow[0] : 0;
+
+// 3. Check if user is admin
+$usernameEscaped = mysqli_real_escape_string($db, $_SESSION['user']['username']);
+$isAdminRes = mysqli_query($db, "SELECT `is_admin` FROM `biartet_users` WHERE `username` = '$usernameEscaped' LIMIT 1");
+$isAdminRow = $isAdminRes ? mysqli_fetch_assoc($isAdminRes) : null;
+$isAdmin = ($isAdminRow && (int)$isAdminRow['is_admin'] === 1);
+
+// 4. Fetch all sellers (users) for target assignment dropdown
+$sellers = array();
+if ($isAdmin) {
+    $sellersRes = mysqli_query($db, "SELECT `id`, `username` FROM `biartet_users` ORDER BY `username` ASC");
+    if ($sellersRes) {
+        while ($row = mysqli_fetch_assoc($sellersRes)) {
+            $sellers[] = $row;
+        }
+    }
+}
+
 // Calculate earnings control data
 $total_comision = 0.00;
 $total_premio = 0.00;
@@ -26,23 +60,66 @@ $total_ganancia = $total_comision + $total_premio;
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
         <div style="background: rgba(255, 255, 255, 0.03); padding: 1.25rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); text-align: center;">
             <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-bottom: 0.25rem;">Ventas Concretadas</div>
-            <div style="font-size: 2rem; font-weight: 700; color: var(--highlight-color);"><?php echo $total_exitosas; ?></div>
+            <div style="font-size: 2rem; font-weight: 700; color: var(--highlight-color);" id="box-ventas"><?php echo $total_exitosas; ?></div>
         </div>
         
         <div style="background: rgba(255, 255, 255, 0.03); padding: 1.25rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); text-align: center;">
             <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-bottom: 0.25rem;">Comisiones Acumuladas</div>
-            <div style="font-size: 2rem; font-weight: 700; color: #10b981;">$<?php echo number_format($total_comision, 2); ?></div>
+            <div style="font-size: 2rem; font-weight: 700; color: #10b981;" id="box-comisiones">$<?php echo number_format($total_comision, 2); ?></div>
         </div>
 
         <div style="background: rgba(255, 255, 255, 0.03); padding: 1.25rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); text-align: center;">
             <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-bottom: 0.25rem;">Premios Extra (Mismo Día)</div>
-            <div style="font-size: 2rem; font-weight: 700; color: #3b82f6;">$<?php echo number_format($total_premio, 2); ?></div>
+            <div style="font-size: 2rem; font-weight: 700; color: #3b82f6;" id="box-premios">$<?php echo number_format($total_premio, 2); ?></div>
         </div>
 
         <div style="background: rgba(255, 255, 255, 0.03); padding: 1.25rem; border-radius: 12px; border: var(--glass-border-focus); text-align: center; box-shadow: 0 0 15px rgba(255, 223, 32, 0.1);">
             <div style="font-size: 0.85rem; color: var(--highlight-color); font-weight:600; margin-bottom: 0.25rem;">Ganancia Total</div>
-            <div style="font-size: 2rem; font-weight: 800; color: var(--highlight-color);">$<?php echo number_format($total_ganancia, 2); ?></div>
+            <div style="font-size: 2rem; font-weight: 800; color: var(--highlight-color);" id="box-ganancia-total">$<?php echo number_format($total_ganancia, 2); ?></div>
         </div>
+    </div>
+</div>
+
+<!-- Widget Meta Diaria -->
+<div class="glass-card" id="widget-meta-diaria" style="margin-bottom: 2rem; padding: 1.5rem; background: rgba(30, 8, 9, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); position: relative;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
+        <h3 class="gradient-text" style="font-size: 1.2rem; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+            🏆 Meta de Ventas Diaria
+            <?php if ($isAdmin): ?>
+                <button type="button" id="btn-config-meta" style="background: none; border: none; cursor: pointer; font-size: 1.25rem; padding: 0; margin-left: 5px; outline: none;" title="Configurar Meta Diaria">
+                    ⚙️
+                </button>
+            <?php endif; ?>
+        </h3>
+        <button type="button" id="btn-toggle-meta" class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;">
+            Ocultar Progreso
+        </button>
+    </div>
+    
+    <div id="meta-diaria-content">
+        <?php if ($meta_diaria > 0): 
+            $porcentaje = min(100, round(($ventas_hoy / $meta_diaria) * 100));
+        ?>
+            <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 0.5rem; color: rgba(255,255,255,0.85);">
+                <span>Vendedor: <strong><?php echo htmlspecialchars($_SESSION['user']['username']); ?></strong></span>
+                <span>Progreso: <strong><?php echo $ventas_hoy; ?> / <?php echo $meta_diaria; ?> ventas</strong> (<?php echo $porcentaje; ?>%)</span>
+            </div>
+            <div style="width: 100%; height: 10px; background: rgba(255, 255, 255, 0.1); border-radius: 5px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.05);">
+                <div style="width: <?php echo $porcentaje; ?>%; height: 100%; background: linear-gradient(90deg, #10b981, #34d399); border-radius: 5px; transition: width 0.5s ease;"></div>
+            </div>
+            <?php if ($ventas_hoy >= $meta_diaria): ?>
+                <div style="margin-top: 0.75rem; font-size: 0.85rem; color: var(--highlight-color); font-weight: 600; text-align: center; animation: pulse 2s infinite;">
+                    🎉 ¡Felicidades! Has alcanzado la meta diaria de ventas de hoy. 🚀
+                </div>
+            <?php endif; ?>
+        <?php else: ?>
+            <p style="font-size: 0.9rem; color: rgba(255,255,255,0.5); margin: 0;">
+                No se ha establecido una meta de ventas para ti el día de hoy.
+                <?php if ($isAdmin): ?>
+                    Haz clic en el engranaje ⚙️ para configurar una meta.
+                <?php endif; ?>
+            </p>
+        <?php endif; ?>
     </div>
 </div>
 
@@ -218,6 +295,7 @@ $total_ganancia = $total_comision + $total_premio;
                         <th>Ubicación y Dirección</th>
                         <th>Estado de Llamada</th>
                         <th>Lapsos (Día/Hora)</th>
+                        <th style="width: 140px; text-align: right;">Ganancia (USD)</th>
                         <th style="width: 210px; text-align: center;">Acciones</th>
                     </tr>
                 </thead>
@@ -234,6 +312,7 @@ $total_ganancia = $total_comision + $total_premio;
                             data-fecha-creacion-full="<?php echo date('Y-m-d H:i:s', strtotime($c->fecha_creacion)); ?>"
                             data-fecha-creacion-timestamp="<?php echo strtotime($c->fecha_creacion); ?>"
                             data-posponer-hasta-timestamp="<?php echo !empty($c->posponer_hasta) ? strtotime($c->posponer_hasta) : 0; ?>"
+                            data-lapso-dias="<?php echo htmlspecialchars($c->lapso_dias); ?>"
                             data-lapso-tiempo="<?php echo htmlspecialchars($c->lapso_tiempo); ?>"
                             data-nombre="<?php echo htmlspecialchars($c->nombre); ?>"
                             data-id-unico="<?php echo htmlspecialchars($c->identificador_unico); ?>"
@@ -277,6 +356,9 @@ $total_ganancia = $total_comision + $total_premio;
                                     <?php if ($c->lapso_tiempo): ?>
                                         <div>⏱️ <?php echo htmlspecialchars($c->lapso_tiempo); ?></div><?php endif; ?>
                                 </div>
+                            </td>
+                            <td class="row-ganancia" style="text-align: right; font-weight: 700; color: #10b981;" data-comision="<?php echo $c->comision_aplicada; ?>" data-premio="<?php echo $c->premio_aplicado; ?>">
+                                $<?php echo number_format((double)$c->comision_aplicada + (double)$c->premio_aplicado, 2); ?>
                             </td>
                             <td style="text-align: center;">
                                 <div class="action-buttons">
@@ -327,6 +409,13 @@ $total_ganancia = $total_comision + $total_premio;
                         </tr>
                     <?php endforeach; ?>
                 </tbody>
+                <tfoot>
+                    <tr style="background: rgba(70, 8, 9, 0.4); font-weight: bold; border-top: 2px solid rgba(255,255,255,0.15);">
+                        <td colspan="6" style="text-align: right; color: var(--highlight-color); padding: 1rem;">Total Ganancia Filtro:</td>
+                        <td style="text-align: right; color: #10b981; font-weight: 800; padding: 1rem;" id="table-total-ganancia">$0.00</td>
+                        <td></td>
+                    </tr>
+                </tfoot>
             </table>
         <?php endif; ?>
     </div>
@@ -659,6 +748,11 @@ $total_ganancia = $total_comision + $total_premio;
             var query = searchInput ? searchInput.value.toLowerCase().trim() : '';
             var filterDate = dateInput ? dateInput.value : '';
 
+            var totalComisiones = 0;
+            var totalPremios = 0;
+            var totalVentas = 0;
+            var totalGananciaTable = 0;
+
             // Filter Clientes
             var clientRows = document.querySelectorAll('.clients-table tbody tr');
             clientRows.forEach(function (row) {
@@ -679,10 +773,36 @@ $total_ganancia = $total_comision + $total_premio;
 
                 if (textMatches && dateMatches) {
                     row.style.display = '';
+
+                    var gananciaCell = row.querySelector('.row-ganancia');
+                    if (gananciaCell) {
+                        var comision = parseFloat(gananciaCell.getAttribute('data-comision')) || 0;
+                        var premio = parseFloat(gananciaCell.getAttribute('data-premio')) || 0;
+                        totalGananciaTable += (comision + premio);
+
+                        if (status.indexOf('exito') > -1) {
+                            totalComisiones += comision;
+                            totalPremios += premio;
+                            totalVentas++;
+                        }
+                    }
                 } else {
                     row.style.display = 'none';
                 }
             });
+
+            // Update DOM boxes
+            var valVentas = document.getElementById('box-ventas');
+            var valComisiones = document.getElementById('box-comisiones');
+            var valPremios = document.getElementById('box-premios');
+            var valGananciaTotal = document.getElementById('box-ganancia-total');
+            var valTableTotal = document.getElementById('table-total-ganancia');
+
+            if (valVentas) valVentas.textContent = totalVentas;
+            if (valComisiones) valComisiones.textContent = '$' + totalComisiones.toFixed(2);
+            if (valPremios) valPremios.textContent = '$' + totalPremios.toFixed(2);
+            if (valGananciaTotal) valGananciaTotal.textContent = '$' + (totalComisiones + totalPremios).toFixed(2);
+            if (valTableTotal) valTableTotal.textContent = '$' + totalGananciaTable.toFixed(2);
 
             // Filter Pedidos
             var orderRows = document.querySelectorAll('.orders-table tbody tr');
@@ -722,6 +842,9 @@ $total_ganancia = $total_comision + $total_premio;
                 }
             });
         }
+
+        // Initialize dynamic calculations on load
+        applyFilters();
 
         // ----------------------------------------------------
         // 3. Audio Alarm System (Paso 8 y 15)
@@ -840,29 +963,24 @@ $total_ganancia = $total_comision + $total_premio;
                 var idUnico = row.getAttribute('data-id-unico');
                 var nombre = row.getAttribute('data-nombre');
                 var status = row.getAttribute('data-status');
-                var lapsoStr = row.getAttribute('data-lapso-tiempo');
+                var lapsoDias = row.getAttribute('data-lapso-dias');
+                var lapsoTiempo = row.getAttribute('data-lapso-tiempo');
 
-                if (status !== 'Pendiente' || !lapsoStr) return;
+                if (status !== 'Pendiente' || !lapsoDias || !lapsoTiempo) return;
 
-                var hours = parseLapsoTiempo(lapsoStr);
-                if (hours === 0) return;
+                // Combine date and time, e.g. "YYYY-MM-DD 14:30"
+                var scheduledDateTimeStr = lapsoDias + 'T' + lapsoTiempo + ':00';
+                var dueTimestamp = Math.floor(new Date(scheduledDateTimeStr).getTime() / 1000);
+                if (isNaN(dueTimestamp)) return;
 
-                var creationTimestamp = parseInt(row.getAttribute('data-fecha-creacion-timestamp'), 10);
                 var posponerHastaTimestamp = parseInt(row.getAttribute('data-posponer-hasta-timestamp'), 10);
 
-                if (isNaN(creationTimestamp)) {
-                    var creationStr = row.getAttribute('data-fecha-creacion-full');
-                    if (!creationStr) return;
-                    creationTimestamp = Math.floor(new Date(creationStr.replace(' ', 'T')).getTime() / 1000);
-                }
                 if (isNaN(posponerHastaTimestamp)) {
                     posponerHastaTimestamp = 0;
                 }
 
-                var dueTimestamp = creationTimestamp + (hours * 3600);
-
                 if (nowSeconds >= dueTimestamp && (posponerHastaTimestamp === 0 || nowSeconds >= posponerHastaTimestamp)) {
-                    triggeredAlarms.push({ id: idUnico, name: nombre, limit: lapsoStr });
+                    triggeredAlarms.push({ id: idUnico, name: nombre, limit: lapsoDias + ' ' + lapsoTiempo });
 
                     // If it hasn't been silenced, trigger sound
                     if (!silencedClientIds[idUnico]) {
@@ -1191,4 +1309,124 @@ $total_ganancia = $total_comision + $total_premio;
             textContent.textContent = text || '(Esta charla no tiene contenido registrado)';
         }
     })();
+
+    // Meta Diaria widget toggle & config
+    (function() {
+        var btnToggleMeta = document.getElementById('btn-toggle-meta');
+        var metaContent = document.getElementById('meta-diaria-content');
+        if (btnToggleMeta && metaContent) {
+            var isHidden = localStorage.getItem('meta_diaria_hidden') === 'true';
+            if (isHidden) {
+                metaContent.style.display = 'none';
+                btnToggleMeta.textContent = 'Mostrar Progreso';
+            }
+            btnToggleMeta.addEventListener('click', function() {
+                if (metaContent.style.display === 'none') {
+                    metaContent.style.display = 'block';
+                    btnToggleMeta.textContent = 'Ocultar Progreso';
+                    localStorage.setItem('meta_diaria_hidden', 'false');
+                } else {
+                    metaContent.style.display = 'none';
+                    btnToggleMeta.textContent = 'Mostrar Progreso';
+                    localStorage.setItem('meta_diaria_hidden', 'true');
+                }
+            });
+        }
+
+        <?php if ($isAdmin): ?>
+        var btnConfigMeta = document.getElementById('btn-config-meta');
+        var metaConfigModal = document.getElementById('metaConfigModal');
+        var btnCloseMetaModal = document.getElementById('btn-close-meta-modal');
+        var formConfigMeta = document.getElementById('form-config-meta');
+        
+        if (btnConfigMeta && metaConfigModal) {
+            btnConfigMeta.addEventListener('click', function(e) {
+                e.preventDefault();
+                e.stopPropagation();
+                metaConfigModal.style.display = 'flex';
+            });
+        }
+        if (btnCloseMetaModal && metaConfigModal) {
+            btnCloseMetaModal.addEventListener('click', function() {
+                metaConfigModal.style.display = 'none';
+            });
+        }
+        if (formConfigMeta) {
+            formConfigMeta.addEventListener('submit', function(e) {
+                e.preventDefault();
+                
+                var fecha = document.getElementById('meta_fecha').value;
+                var vendedor_id = document.getElementById('meta_vendedor').value;
+                var cantidad_meta = document.getElementById('meta_cantidad').value;
+                
+                var params = 'fecha=' + encodeURIComponent(fecha) + 
+                             '&vendedor_id=' + encodeURIComponent(vendedor_id) + 
+                             '&cantidad_meta=' + encodeURIComponent(cantidad_meta);
+                             
+                fetch(APP_BASE_URL + 'api/metas/save', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/x-www-form-urlencoded'
+                    },
+                    body: params
+                })
+                .then(function(res) { return res.json(); })
+                .then(function(data) {
+                    if (data.status === 'success') {
+                        alert('¡Meta diaria configurada exitosamente!');
+                        metaConfigModal.style.display = 'none';
+                        window.location.reload();
+                    } else {
+                        alert('Error: ' + data.message);
+                    }
+                })
+                .catch(function(err) {
+                    console.error(err);
+                    alert('Error al conectar con el servidor.');
+                });
+            });
+        }
+        <?php endif; ?>
+    })();
 </script>
+
+<?php if ($isAdmin): ?>
+<!-- Modal para Configurar Meta Diaria -->
+<div id="metaConfigModal" class="modal-overlay" style="display:none; justify-content:center; align-items:center;">
+    <div class="glass-card" style="max-width: 450px; width: 100%; border: 1px solid var(--highlight-color); background: rgba(30, 8, 9, 0.95); position: relative; z-index: 10000;">
+        <h3 class="gradient-text" style="margin-top: 0; display: flex; align-items: center; gap: 0.5rem;">
+            🏆 Configurar Meta Diaria
+        </h3>
+        <p style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-bottom: 1.5rem;">
+            Establezca el objetivo de ventas diarias para cada vendedor en una fecha específica.
+        </p>
+        
+        <form id="form-config-meta">
+            <div class="form-group">
+                <label class="form-label" for="meta_fecha">Fecha *</label>
+                <input type="date" id="meta_fecha" class="form-control" value="<?php echo date('Y-m-d'); ?>" required style="padding:0.65rem 1rem;">
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="meta_vendedor">Vendedor / Vendedora *</label>
+                <select id="meta_vendedor" class="form-control" required style="background: #1c0607; color: #fff; padding:0.65rem 1rem;">
+                    <option value="">-- Seleccionar --</option>
+                    <?php foreach ($sellers as $seller): ?>
+                        <option value="<?php echo $seller['id']; ?>"><?php echo htmlspecialchars($seller['username']); ?></option>
+                    <?php endforeach; ?>
+                </select>
+            </div>
+            
+            <div class="form-group">
+                <label class="form-label" for="meta_cantidad">Meta de Ventas (Cantidad) *</label>
+                <input type="number" id="meta_cantidad" class="form-control" min="0" required value="5" style="padding:0.65rem 1rem;">
+            </div>
+            
+            <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                <button type="button" id="btn-close-meta-modal" class="btn btn-secondary" style="padding:0.5rem 1rem;">Cancelar</button>
+                <button type="submit" class="btn btn-primary" style="padding:0.5rem 1rem;">Guardar Meta</button>
+            </div>
+        </form>
+    </div>
+</div>
+<?php endif; ?>

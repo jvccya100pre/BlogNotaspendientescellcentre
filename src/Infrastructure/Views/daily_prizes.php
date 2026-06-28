@@ -1,0 +1,87 @@
+<?php
+/**
+ * View: Configure Daily Prizes for Campaign Items
+ */
+?>
+<div class="glass-card" style="margin-top: 1rem;">
+    <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 2rem; flex-wrap: wrap; gap: 1rem;">
+        <div>
+            <h1 class="gradient-text" style="margin: 0 0 0.25rem 0;">Control de Premios Diarios</h1>
+            <p style="font-size: 0.9rem; color: rgba(255,255,255,0.6);">Establezca premios adicionales por la venta de productos específicos para una fecha determinada.</p>
+        </div>
+    </div>
+
+    <!-- Date selector panel -->
+    <div style="background: rgba(255, 255, 255, 0.03); padding: 1.25rem; border-radius: 12px; border: 1px solid rgba(255, 255, 255, 0.06); margin-bottom: 2rem; display: flex; align-items: center; gap: 1rem; flex-wrap: wrap;">
+        <label class="form-label" for="selected_fecha" style="margin-bottom: 0; font-weight: bold; color: var(--highlight-color);">Seleccione la Fecha:</label>
+        <input type="date" id="selected_fecha" class="form-control" value="<?php echo htmlspecialchars($fecha); ?>" style="width: 200px; padding: 0.5rem 1rem;" onchange="changeFecha(this.value)">
+    </div>
+
+    <?php if (isset($success)): ?>
+        <div class="alert alert-success">
+            <span>✔</span> <?php echo htmlspecialchars($success); ?>
+        </div>
+    <?php endif; ?>
+
+    <?php if (isset($error)): ?>
+        <div class="alert alert-error">
+            <span>❌</span> <?php echo htmlspecialchars($error); ?>
+        </div>
+    <?php endif; ?>
+
+    <form action="daily-prizes/save" method="POST">
+        <input type="hidden" name="fecha" value="<?php echo htmlspecialchars($fecha); ?>">
+
+        <div class="table-responsive" style="margin-bottom: 1.5rem;">
+            <table class="custom-table">
+                <thead>
+                    <tr>
+                        <th>Campaña</th>
+                        <th>Producto / Item a Vender</th>
+                        <th style="width: 250px; text-align: center;">Premio Extra para esta Fecha (USD) *</th>
+                    </tr>
+                </thead>
+                <tbody>
+                    <?php if (empty($items)): ?>
+                        <tr>
+                            <td colspan="3" style="text-align: center; color: rgba(255,255,255,0.4); padding: 2rem;">
+                                No hay productos o ítems activos en ninguna campaña para configurar premios.
+                            </td>
+                        </tr>
+                    <?php else: ?>
+                        <?php foreach ($items as $item): ?>
+                            <tr>
+                                <td style="color: rgba(255,255,255,0.6); font-size: 0.9rem;">
+                                    <?php echo htmlspecialchars($item['campana_nombre']); ?>
+                                </td>
+                                <td style="font-weight: 600; color: #fff;">
+                                    <?php echo htmlspecialchars($item['nombre_producto']); ?>
+                                </td>
+                                <td>
+                                    <div style="display: flex; align-items: center; justify-content: center; gap: 0.5rem;">
+                                        <span style="color: rgba(255,255,255,0.6); font-weight: bold;">$</span>
+                                        <input type="number" step="0.01" name="premios[<?php echo $item['id']; ?>]" class="form-control" value="<?php echo number_format((double)$item['premio_hoy'], 2, '.', ''); ?>" min="0" style="width: 150px; text-align: right; padding: 0.5rem 0.75rem;">
+                                    </div>
+                                </td>
+                            </tr>
+                        <?php endforeach; ?>
+                    <?php endif; ?>
+                </tbody>
+            </table>
+        </div>
+
+        <?php if (!empty($items)): ?>
+            <div style="display: flex; justify-content: flex-end; border-top: 1px solid rgba(255,255,255,0.08); padding-top: 1.5rem;">
+                <button type="submit" class="btn btn-primary" style="padding: 0.65rem 1.5rem;">Guardar Premios para la Fecha</button>
+            </div>
+        <?php endif; ?>
+    </form>
+</div>
+
+<script>
+function changeFecha(val) {
+    if (val) {
+        window.location.href = 'daily-prizes?fecha=' + encodeURIComponent(val);
+    }
+}
+</script>

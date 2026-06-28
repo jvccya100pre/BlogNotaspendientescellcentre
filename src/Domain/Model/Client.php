@@ -27,6 +27,7 @@ class Client {
     public $comision_aplicada;
     public $premio_aplicado;
     public $precio_aplicado;
+    public $vendedor_id;
 
     public function __construct(
         $id,
@@ -51,7 +52,8 @@ class Client {
         $cantidad_items = 1,
         $comision_aplicada = 0.00,
         $premio_aplicado = 0.00,
-        $precio_aplicado = 0.00
+        $precio_aplicado = 0.00,
+        $vendedor_id = null
     ) {
         $this->id = $id;
         $this->identificador_unico = $identificador_unico;
@@ -76,6 +78,7 @@ class Client {
         $this->comision_aplicada = $comision_aplicada;
         $this->premio_aplicado = $premio_aplicado;
         $this->precio_aplicado = $precio_aplicado;
+        $this->vendedor_id = $vendedor_id;
     }
 
     /**

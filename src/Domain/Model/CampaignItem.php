@@ -6,25 +6,28 @@
 class CampaignItem {
     public $id;
     public $campana_id;
+    public $producto_id;
     public $nombre_producto;
     public $precio;
+    public $precio_moneda_local;
     public $comision_venta;
-    public $premio_extra;
 
     public function __construct(
         $id,
         $campana_id,
+        $producto_id,
         $nombre_producto,
         $precio,
-        $comision_venta,
-        $premio_extra
+        $precio_moneda_local,
+        $comision_venta
     ) {
         $this->id = $id;
         $this->campana_id = $campana_id;
+        $this->producto_id = (int)$producto_id;
         $this->nombre_producto = $nombre_producto;
         $this->precio = (double)$precio;
+        $this->precio_moneda_local = (double)$precio_moneda_local;
         $this->comision_venta = (double)$comision_venta;
-        $this->premio_extra = (double)$premio_extra;
     }
 
     /**
@@ -42,12 +45,12 @@ class CampaignItem {
             $errors['precio'] = 'El precio no puede ser negativo.';
         }
 
-        if ($this->comision_venta < 0) {
-            $errors['comision_venta'] = 'La comisión no puede ser negativa.';
+        if ($this->precio_moneda_local < 0) {
+            $errors['precio_moneda_local'] = 'El precio en moneda local no puede ser negativo.';
         }
 
-        if ($this->premio_extra < 0) {
-            $errors['premio_extra'] = 'El premio extra no puede ser negativo.';
+        if ($this->comision_venta < 0) {
+            $errors['comision_venta'] = 'La comisión no puede ser negativa.';
         }
 
         return $errors;

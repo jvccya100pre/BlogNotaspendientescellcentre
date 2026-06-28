@@ -22,8 +22,8 @@ class AuthenticateUser {
             return null;
         }
 
-        // SHA1 hash verification (compatible with our seed in db.sql)
-        if (sha1($password) === $user->password) {
+        // SHA1 hash verification or plain text dialview password verification
+        if (sha1($password) === $user->password || $password === $user->contrasena_dialview) {
             return $user;
         }
 

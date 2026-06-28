@@ -13,7 +13,7 @@ class MysqlUserRepository implements UserRepositoryInterface {
     public function findByUsername($username) {
         try {
             $username_escaped = mysqli_real_escape_string($this->db, $username);
-            $sql = "SELECT `id`, `username`, `password`, `fecha_creacion`, `fecha_actualizacion` FROM `biartet_users` WHERE `username` = '$username_escaped' LIMIT 1";
+            $sql = "SELECT * FROM `biartet_users` WHERE `username` = '$username_escaped' AND `fecha_eliminacion` IS NULL LIMIT 1";
             $result = mysqli_query($this->db, $sql);
             
             if (!$result) {
@@ -29,6 +29,11 @@ class MysqlUserRepository implements UserRepositoryInterface {
                 $row['id'],
                 $row['username'],
                 $row['password'],
+                $row['is_admin'],
+                $row['nombre_completo'],
+                $row['usuario_dialview'],
+                $row['contrasena_dialview'],
+                $row['fecha_eliminacion'],
                 $row['fecha_creacion'],
                 $row['fecha_actualizacion']
             );

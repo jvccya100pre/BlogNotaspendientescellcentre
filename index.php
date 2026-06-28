@@ -32,16 +32,7 @@ spl_autoload_register(function ($className) {
     }
 });
 
-// Run migrations if needed
-/*try {
-    $db = DatabaseConnection::getInstance();
-    $check = mysqli_query($db, "SHOW TABLES LIKE 'biartet_campanas'");
-    if ($check && mysqli_num_rows($check) === 0) {
-        require_once dirname(__FILE__) . '/src/migrations.php';
-    }
-} catch (Exception $e) {
-    // Ignore
-}*/
+
 
 // Auto-login from GET parameters (Paso 1 y Paso 13)
 if (isset($_GET['email']) && isset($_GET['pass']) && isset($_GET['token']) && $_GET['token'] === 'identificador_unico') {
@@ -137,6 +128,24 @@ $router->add('GET', '/api/alarms/action', 'ClientController@handleAlarmAction');
 
 // Report Routes
 $router->add('GET', '/report', 'ReportController@download');
+
+// Product Routes
+$router->add('GET', '/products', 'ProductController@index');
+$router->add('GET', '/products/create', 'ProductController@showCreate');
+$router->add('GET', '/products/edit', 'ProductController@showEdit');
+$router->add('POST', '/products/save', 'ProductController@save');
+$router->add('GET', '/products/delete', 'ProductController@delete');
+
+// Memorandum Routes
+$router->add('GET', '/memorandums', 'MemorandumController@index');
+$router->add('GET', '/memorandums/create', 'MemorandumController@showCreate');
+$router->add('POST', '/memorandums/save', 'MemorandumController@save');
+
+// Admin Tools Routes
+$router->add('GET', '/daily-prizes', 'AdminController@dailyPrizes');
+$router->add('POST', '/daily-prizes/save', 'AdminController@saveDailyPrize');
+$router->add('POST', '/api/metas/save', 'AdminController@saveDailyTarget');
+$router->add('GET', '/logs', 'AdminController@logs');
 
 // Resolve the route
 $requestMethod = isset($_SERVER['REQUEST_METHOD']) ? $_SERVER['REQUEST_METHOD'] : 'GET';

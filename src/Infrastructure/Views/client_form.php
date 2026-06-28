@@ -198,43 +198,17 @@ $estados = array(
             <div class="form-group" style="grid-column: span 1;">
                 <div style="display:grid; grid-template-columns:1fr 1fr; gap:1rem;">
                     <div>
-                        <label class="form-label" for="lapso_tiempo">Llamar en (Horas) *</label>
-                        <select class="form-control" id="lapso_tiempo" name="lapso_tiempo" required>
-                            <option value="">-- Seleccionar --</option>
-                            <?php 
-                            // Lapsos de Horas (Paso 14)
-                            $horas_opts = array(
-                                "1/2 hora", "1h 1/2 hora", "2h 1/2 hora", "3h 1/2 hora", "4h 1/2 hora", 
-                                "5h 1/2 hora", "6h 1/2 hora", "7h 1/2 hora", "8h 1/2 hora", "9h 1/2 hora", 
-                                "10h 1/2 hora", "11h 1/2 hora", "12h 1/2 hora", "13h 1/2 hora", "14h 1/2 hora", 
-                                "15h 1/2 hora", "16h 1/2 hora", "17h 1/2 hora", "18h 1/2 hora", "19h 1/2 hora", 
-                                "20h 1/2 hora", "21h 1/2 hora", "22h 1/2 hora", "23h 1/2 hora", "24h 1/2 hora"
-                            );
-                            foreach ($horas_opts as $optValue):
-                            ?>
-                                <option value="<?php echo $optValue; ?>" <?php echo ($lapso_tiempo == $optValue) ? 'selected' : ''; ?>>
-                                    <?php echo $optValue; ?>
-                                </option>
-                            <?php endforeach; ?>
-                        </select>
-                        <?php if (isset($errors['lapso_tiempo'])): ?>
-                            <div class="error-text"><?php echo htmlspecialchars($errors['lapso_tiempo']); ?></div>
+                        <label class="form-label" for="lapso_dias">Llamar en (Fecha/Almanaque) *</label>
+                        <input class="form-control" type="date" id="lapso_dias" name="lapso_dias" value="<?php echo !empty($lapso_dias) ? $lapso_dias : date('Y-m-d'); ?>" required style="padding: 0.65rem 1rem;">
+                        <?php if (isset($errors['lapso_dias'])): ?>
+                            <div class="error-text"><?php echo htmlspecialchars($errors['lapso_dias']); ?></div>
                         <?php endif; ?>
                     </div>
                     <div>
-                        <label class="form-label" for="lapso_dias">Llamar en (Días) *</label>
-                        <select class="form-control" id="lapso_dias" name="lapso_dias" required>
-                            <option value="">-- Seleccionar --</option>
-                            <?php for ($d = 1; $d <= 20; $d++): 
-                                $optValue = $d . ' ' . ($d == 1 ? 'dia' : 'dias');
-                            ?>
-                                <option value="<?php echo $optValue; ?>" <?php echo ($lapso_dias == $optValue) ? 'selected' : ''; ?>>
-                                    <?php echo $optValue; ?>
-                                </option>
-                            <?php endfor; ?>
-                        </select>
-                        <?php if (isset($errors['lapso_dias'])): ?>
-                            <div class="error-text"><?php echo htmlspecialchars($errors['lapso_dias']); ?></div>
+                        <label class="form-label" for="lapso_tiempo">Llamar en (Hora Exacta) *</label>
+                        <input class="form-control" type="time" id="lapso_tiempo" name="lapso_tiempo" value="<?php echo !empty($lapso_tiempo) ? $lapso_tiempo : date('H:i'); ?>" required style="padding: 0.65rem 1rem;">
+                        <?php if (isset($errors['lapso_tiempo'])): ?>
+                            <div class="error-text"><?php echo htmlspecialchars($errors['lapso_tiempo']); ?></div>
                         <?php endif; ?>
                     </div>
                 </div>

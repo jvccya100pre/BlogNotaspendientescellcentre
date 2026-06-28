@@ -177,12 +177,21 @@ class ClientController {
                             $premio_aplicado = $existing->premio_aplicado;
                         } else {
                             $createdDateStr = $existing ? date('Y-m-d', strtotime($existing->fecha_creacion)) : date('Y-m-d');
-                            if ($createdDateStr === date('Y-m-d')) {
-                                $premio_aplicado = $item->premio_extra;
-                            }
+                            $db = DatabaseConnection::getInstance();
+                            $createdDateEscaped = mysqli_real_escape_string($db, $createdDateStr);
+                            $prizeQuery = "SELECT `premio_extra` FROM `biartet_premios_diarios` WHERE `fecha` = '$createdDateEscaped' AND `campana_item_id` = " . (int)$campana_item_id . " LIMIT 1";
+                            $prizeRes = mysqli_query($db, $prizeQuery);
+                            $prizeRow = $prizeRes ? mysqli_fetch_assoc($prizeRes) : null;
+                            $premio_aplicado = $prizeRow ? (double)$prizeRow['premio_extra'] * $cantidad_items : 0.00;
                         }
                     } else {
-                        $premio_aplicado = $item->premio_extra;
+                        $createdDateStr = date('Y-m-d');
+                        $db = DatabaseConnection::getInstance();
+                        $createdDateEscaped = mysqli_real_escape_string($db, $createdDateStr);
+                        $prizeQuery = "SELECT `premio_extra` FROM `biartet_premios_diarios` WHERE `fecha` = '$createdDateEscaped' AND `campana_item_id` = " . (int)$campana_item_id . " LIMIT 1";
+                        $prizeRes = mysqli_query($db, $prizeQuery);
+                        $prizeRow = $prizeRes ? mysqli_fetch_assoc($prizeRes) : null;
+                        $premio_aplicado = $prizeRow ? (double)$prizeRow['premio_extra'] * $cantidad_items : 0.00;
                     }
                 }
             }
@@ -241,11 +250,13 @@ class ClientController {
             $cantidad_items,
             $comision_aplicada,
             $premio_aplicado,
-            $precio_aplicado
+            $precio_aplicado,
+            isset($_SESSION['user']['id']) ? $_SESSION['user']['id'] : null
         );
 
         $result = $this->saveClientUseCase->execute($client);
         if ($result === true) {
+            SystemLog::write((empty($id) ? "Registró" : "Actualizó") . " cliente: " . $nombre . " (Estado: " . $estado_llamada . ")");
             $_SESSION['success_message'] = empty($id) 
                 ? 'Cliente registrado con éxito.' 
                 : 'Cliente actualizado con éxito.';
@@ -363,6 +374,7 @@ class ClientController {
         $result = $this->deleteClientUseCase->execute($id);
         
         if ($result) {
+            SystemLog::write("Eliminó cliente con ID: " . $id);
             $_SESSION['success_message'] = 'Cliente eliminado con éxito.';
         } else {
             $_SESSION['error_message'] = 'Error al intentar eliminar el cliente.';
@@ -397,9 +409,12 @@ class ClientController {
                             
                             // Check if marked successful on the same day as created
                             $createdDateStr = date('Y-m-d', strtotime($client->fecha_creacion));
-                            if ($createdDateStr === date('Y-m-d')) {
-                                $premio_aplicado = $item->premio_extra;
-                            }
+                            $db = DatabaseConnection::getInstance();
+                            $createdDateEscaped = mysqli_real_escape_string($db, $createdDateStr);
+                            $prizeQuery = "SELECT `premio_extra` FROM `biartet_premios_diarios` WHERE `fecha` = '$createdDateEscaped' AND `campana_item_id` = " . (int)$client->campana_item_id . " LIMIT 1";
+                            $prizeRes = mysqli_query($db, $prizeQuery);
+                            $prizeRow = $prizeRes ? mysqli_fetch_assoc($prizeRes) : null;
+                            $premio_aplicado = $prizeRow ? (double)$prizeRow['premio_extra'] * $qty : 0.00;
                         }
                     }
 
@@ -414,6 +429,7 @@ class ClientController {
                         WHERE `id` = $id_escaped";
                         
                     if (mysqli_query($db, $sql)) {
+                        SystemLog::write("Marcó cliente con ID " . $id . " como Exito pedido pendiente");
                         $_SESSION['success_message'] = 'Estado del cliente actualizado a exitoso con éxito.';
                     } else {
                         $_SESSION['error_message'] = 'Error al intentar actualizar el estado del cliente.';
@@ -454,8 +470,10 @@ class ClientController {
 
         if ($action === 'snooze') {
             $success = $repo->snoozeAlarm($id_unico, $minutes);
+            SystemLog::write("Pospuso alarma de cliente " . $id_unico . " por " . $minutes . " minutos");
         } else if ($action === 'delete') {
             $success = $repo->clearAlarm($id_unico);
+            SystemLog::write("Desactivó alarma de cliente " . $id_unico);
         }
 
         header('Content-Type: application/json');

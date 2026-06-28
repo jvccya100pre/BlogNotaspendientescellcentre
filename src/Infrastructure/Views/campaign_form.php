@@ -108,10 +108,10 @@ if (isset($campaign) && $campaign !== null) {
                 <table class="custom-table" id="items-table">
                     <thead>
                         <tr>
-                            <th>Nombre del Producto *</th>
+                            <th>Producto del Catálogo *</th>
                             <th style="width: 150px;">Precio (USD) *</th>
-                            <th style="width: 150px;">Comisión Venta (USD) *</th>
-                            <th style="width: 150px;">Premio Extra Día (USD) *</th>
+                            <th style="width: 170px;">Precio (Moneda Local) *</th>
+                            <th style="width: 170px;">Comisión Venta (USD) *</th>
                             <th style="width: 80px; text-align: center;">Quitar</th>
                         </tr>
                     </thead>
@@ -146,6 +146,7 @@ if (isset($campaign) && $campaign !== null) {
 
     // Array of initial items from PHP
     var initialItems = <?php echo json_encode($items); ?>;
+    var catalogProducts = <?php echo json_encode($productsList); ?>;
     var rowCount = 0;
 
     function addRow(itemData) {
@@ -154,28 +155,50 @@ if (isset($campaign) && $campaign !== null) {
             return;
         }
 
-        var data = itemData || { nombre_producto: '', precio: 0.00, comision_venta: 0.00, premio_extra: 0.00 };
+        var data = itemData || { producto_id: '', precio: 0.00, precio_moneda_local: 0.00, comision_venta: 0.00 };
         var uniqueIndex = rowCount;
 
         var tr = document.createElement('tr');
         tr.id = 'item-row-' + uniqueIndex;
-        tr.innerHTML = '<td>' +
-            '  <input type="text" name="items[' + uniqueIndex + '][nombre_producto]" class="form-control" value="' + escapeHtml(data.nombre_producto) + '" required placeholder="Nombre producto">' +
-            '</td>' +
+
+        // Generate select element for products
+        var selectHtml = '<select name="items[' + uniqueIndex + '][producto_id]" class="form-control" required style="background:#1c0607; color:#fff;">' +
+            '<option value="">-- Seleccionar --</option>';
+        catalogProducts.forEach(function(prod) {
+            var selected = (data.producto_id && parseInt(data.producto_id) === parseInt(prod.id)) ? 'selected' : '';
+            selectHtml += '<option value="' + prod.id + '" ' + selected + '>' + escapeHtml(prod.nombre) + '</option>';
+        });
+        selectHtml += '</select>';
+
+        tr.innerHTML = '<td>' + selectHtml + '</td>' +
             '<td>' +
             '  <input type="number" step="0.01" name="items[' + uniqueIndex + '][precio]" class="form-control" value="' + data.precio + '" required min="0">' +
             '</td>' +
             '<td>' +
-            '  <input type="number" step="0.01" name="items[' + uniqueIndex + '][comision_venta]" class="form-control" value="' + data.comision_venta + '" required min="0">' +
+            '  <input type="number" step="0.01" name="items[' + uniqueIndex + '][precio_moneda_local]" class="form-control price-local-input" value="' + (data.precio_moneda_local || 0.00) + '" required min="0">' +
             '</td>' +
             '<td>' +
-            '  <input type="number" step="0.01" name="items[' + uniqueIndex + '][premio_extra]" class="form-control" value="' + data.premio_extra + '" required min="0">' +
+            '  <input type="number" step="0.01" name="items[' + uniqueIndex + '][comision_venta]" class="form-control" value="' + data.comision_venta + '" required min="0">' +
             '</td>' +
             '<td style="text-align:center; vertical-align:middle;">' +
             '  <button type="button" class="btn btn-danger action-btn btn-remove-row" style="padding: 0.4rem; border-radius: 4px;" title="Eliminar Producto">&times;</button>' +
             '</td>';
 
         itemsContainer.appendChild(tr);
+
+        // Bind auto prefill price event
+        var selectEl = tr.querySelector('select');
+        selectEl.addEventListener('change', function() {
+            var prodId = this.value;
+            if (!prodId) return;
+            var found = catalogProducts.find(function(p) { return parseInt(p.id) === parseInt(prodId); });
+            if (found) {
+                var localPriceInput = tr.querySelector('.price-local-input');
+                if (localPriceInput && (!localPriceInput.value || parseFloat(localPriceInput.value) === 0)) {
+                    localPriceInput.value = found.precio_moneda_local;
+                }
+            }
+        });
 
         // Bind delete button handler
         tr.querySelector('.btn-remove-row').addEventListener('click', function() {
@@ -192,7 +215,7 @@ if (isset($campaign) && $campaign !== null) {
         rowCount = 0;
         rows.forEach(function(row, idx) {
             row.id = 'item-row-' + idx;
-            row.querySelectorAll('input').forEach(function(input) {
+            row.querySelectorAll('input, select').forEach(function(input) {
                 var name = input.getAttribute('name');
                 if (name) {
                     var updatedName = name.replace(/items\[\d+\]/, 'items[' + idx + ']');
