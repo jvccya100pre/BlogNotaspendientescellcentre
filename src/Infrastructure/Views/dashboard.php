@@ -1,26 +1,26 @@
 <?php
 // Daily sales target logic
 $db = DatabaseConnection::getInstance();
-$loggedUserId = isset($_SESSION['user']['id']) ? (int)$_SESSION['user']['id'] : 0;
+$loggedUserId = isset($_SESSION['user']['id']) ? (int) $_SESSION['user']['id'] : 0;
 $todayDate = date('Y-m-d');
 
 // 1. Fetch today's sales target for the current user
 $targetQuery = "SELECT `cantidad_meta` FROM `biartet_metas_diarias` WHERE `vendedor_id` = $loggedUserId AND `fecha` = '$todayDate' LIMIT 1";
 $targetRes = mysqli_query($db, $targetQuery);
 $targetRow = $targetRes ? mysqli_fetch_assoc($targetRes) : null;
-$meta_diaria = $targetRow ? (int)$targetRow['cantidad_meta'] : 0;
+$meta_diaria = $targetRow ? (int) $targetRow['cantidad_meta'] : 0;
 
 // 2. Count actual sales for current user today
 $salesQuery = "SELECT COUNT(*) FROM `biartet_clientes` WHERE `vendedor_id` = $loggedUserId AND `estado_llamada` = 'Exito pedido pendiente' AND DATE(`fecha_actualizacion`) = '$todayDate' AND `estado` = 1";
 $salesRes = mysqli_query($db, $salesQuery);
 $salesRow = $salesRes ? mysqli_fetch_row($salesRes) : null;
-$ventas_hoy = $salesRow ? (int)$salesRow[0] : 0;
+$ventas_hoy = $salesRow ? (int) $salesRow[0] : 0;
 
 // 3. Check if user is admin
 $usernameEscaped = mysqli_real_escape_string($db, $_SESSION['user']['username']);
 $isAdminRes = mysqli_query($db, "SELECT `is_admin` FROM `biartet_users` WHERE `username` = '$usernameEscaped' LIMIT 1");
 $isAdminRow = $isAdminRes ? mysqli_fetch_assoc($isAdminRes) : null;
-$isAdmin = ($isAdminRow && (int)$isAdminRow['is_admin'] === 1);
+$isAdmin = ($isAdminRow && (int) $isAdminRow['is_admin'] === 1);
 
 // 4. Fetch all sellers (users) for target assignment dropdown
 $sellers = array();
@@ -40,8 +40,8 @@ $total_exitosas = 0;
 
 foreach ($clients as $c) {
     if (strtolower($c->estado_llamada) === 'exito pedido pendiente') {
-        $total_comision += (double)$c->comision_aplicada;
-        $total_premio += (double)$c->premio_aplicado;
+        $total_comision += (double) $c->comision_aplicada;
+        $total_premio += (double) $c->premio_aplicado;
         $total_exitosas++;
     }
 }
@@ -49,66 +49,93 @@ $total_ganancia = $total_comision + $total_premio;
 ?>
 
 <!-- Panel de Ganancias Premium Glassmorphism -->
-<div class="glass-card" style="margin-bottom: 2rem; padding: 2rem; background: rgba(30, 8, 9, 0.6); border: 1px solid rgba(255, 255, 255, 0.08);">
-    <h2 class="gradient-text" style="font-size: 1.5rem; margin-bottom: 1.25rem; display:flex; align-items:center; gap:0.5rem;">
+<div class="glass-card"
+    style="margin-bottom: 2rem; padding: 2rem; background: rgba(30, 8, 9, 0.6); border: 1px solid rgba(255, 255, 255, 0.08);">
+    <h2 class="gradient-text"
+        style="font-size: 1.5rem; margin-bottom: 1.25rem; display:flex; align-items:center; gap:0.5rem;">
         <svg style="width:24px;height:24px;fill:var(--highlight-color);" viewBox="0 0 24 24">
-            <path d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4M12,6A6,6 0 0,1 18,12A6,6 0 0,1 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6M12,8A4,4 0 0,0 8,12A4,4 0 0,0 12,16A4,4 0 0,0 16,12A4,4 0 0,0 12,8Z" />
+            <path
+                d="M12,2A10,10 0 0,1 22,12A10,10 0 0,1 12,22A10,10 0 0,1 2,12A10,10 0 0,1 12,2M12,4A8,8 0 0,0 4,12A8,8 0 0,0 12,20A8,8 0 0,0 20,12A8,8 0 0,0 12,4M12,6A6,6 0 0,1 18,12A6,6 0 0,1 12,18A6,6 0 0,1 6,12A6,6 0 0,1 12,6M12,8A4,4 0 0,0 8,12A4,4 0 0,0 12,16A4,4 0 0,0 16,12A4,4 0 0,0 12,8Z" />
         </svg>
         Control de Ganancias por Ventas Exitosas
     </h2>
-    
+
     <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(200px, 1fr)); gap: 1.5rem;">
-        <div style="background: rgba(255, 255, 255, 0.03); padding: 1.25rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); text-align: center;">
-            <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-bottom: 0.25rem;">Ventas Concretadas</div>
-            <div style="font-size: 2rem; font-weight: 700; color: var(--highlight-color);" id="box-ventas"><?php echo $total_exitosas; ?></div>
-        </div>
-        
-        <div style="background: rgba(255, 255, 255, 0.03); padding: 1.25rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); text-align: center;">
-            <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-bottom: 0.25rem;">Comisiones Acumuladas</div>
-            <div style="font-size: 2rem; font-weight: 700; color: #10b981;" id="box-comisiones">$<?php echo number_format($total_comision, 2); ?></div>
-        </div>
-
-        <div style="background: rgba(255, 255, 255, 0.03); padding: 1.25rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); text-align: center;">
-            <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-bottom: 0.25rem;">Premios Extra (Mismo Día)</div>
-            <div style="font-size: 2rem; font-weight: 700; color: #3b82f6;" id="box-premios">$<?php echo number_format($total_premio, 2); ?></div>
+        <div
+            style="background: rgba(255, 255, 255, 0.03); padding: 1.25rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); text-align: center;">
+            <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-bottom: 0.25rem;">Ventas Concretadas
+            </div>
+            <div style="font-size: 2rem; font-weight: 700; color: var(--highlight-color);" id="box-ventas">
+                <?php echo $total_exitosas; ?>
+            </div>
         </div>
 
-        <div style="background: rgba(255, 255, 255, 0.03); padding: 1.25rem; border-radius: 12px; border: var(--glass-border-focus); text-align: center; box-shadow: 0 0 15px rgba(255, 223, 32, 0.1);">
-            <div style="font-size: 0.85rem; color: var(--highlight-color); font-weight:600; margin-bottom: 0.25rem;">Ganancia Total</div>
-            <div style="font-size: 2rem; font-weight: 800; color: var(--highlight-color);" id="box-ganancia-total">$<?php echo number_format($total_ganancia, 2); ?></div>
+        <div
+            style="background: rgba(255, 255, 255, 0.03); padding: 1.25rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); text-align: center;">
+            <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-bottom: 0.25rem;">Comisiones Acumuladas
+            </div>
+            <div style="font-size: 2rem; font-weight: 700; color: #10b981;" id="box-comisiones">
+                $<?php echo number_format($total_comision, 2); ?></div>
+        </div>
+
+        <div
+            style="background: rgba(255, 255, 255, 0.03); padding: 1.25rem; border-radius: 12px; border: 1px solid rgba(255,255,255,0.05); text-align: center;">
+            <div style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-bottom: 0.25rem;">Premios Extra (Mismo
+                Día)</div>
+            <div style="font-size: 2rem; font-weight: 700; color: #3b82f6;" id="box-premios">
+                $<?php echo number_format($total_premio, 2); ?></div>
+        </div>
+
+        <div
+            style="background: rgba(255, 255, 255, 0.03); padding: 1.25rem; border-radius: 12px; border: var(--glass-border-focus); text-align: center; box-shadow: 0 0 15px rgba(255, 223, 32, 0.1);">
+            <div style="font-size: 0.85rem; color: var(--highlight-color); font-weight:600; margin-bottom: 0.25rem;">
+                Ganancia Total</div>
+            <div style="font-size: 2rem; font-weight: 800; color: var(--highlight-color);" id="box-ganancia-total">
+                $<?php echo number_format($total_ganancia, 2); ?></div>
         </div>
     </div>
 </div>
 
 <!-- Widget Meta Diaria -->
-<div class="glass-card" id="widget-meta-diaria" style="margin-bottom: 2rem; padding: 1.5rem; background: rgba(30, 8, 9, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); position: relative;">
+<div class="glass-card" id="widget-meta-diaria"
+    style="margin-bottom: 2rem; padding: 1.5rem; background: rgba(30, 8, 9, 0.6); border: 1px solid rgba(255, 255, 255, 0.08); position: relative;">
     <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 1rem;">
-        <h3 class="gradient-text" style="font-size: 1.2rem; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
+        <h3 class="gradient-text"
+            style="font-size: 1.2rem; margin: 0; display: flex; align-items: center; gap: 0.5rem;">
             🏆 Meta de Ventas Diaria
             <?php if ($isAdmin): ?>
-                <button type="button" id="btn-config-meta" style="background: none; border: none; cursor: pointer; font-size: 1.25rem; padding: 0; margin-left: 5px; outline: none;" title="Configurar Meta Diaria">
+                <button type="button" id="btn-config-meta"
+                    style="background: none; border: none; cursor: pointer; font-size: 1.25rem; padding: 0; margin-left: 5px; outline: none;"
+                    title="Configurar Meta Diaria">
                     ⚙️
                 </button>
             <?php endif; ?>
         </h3>
-        <button type="button" id="btn-toggle-meta" class="btn btn-secondary" style="padding: 0.3rem 0.6rem; font-size: 0.75rem;">
+        <button type="button" id="btn-toggle-meta" class="btn btn-secondary"
+            style="padding: 0.3rem 0.6rem; font-size: 0.75rem;">
             Ocultar Progreso
         </button>
     </div>
-    
+
     <div id="meta-diaria-content">
-        <?php if ($meta_diaria > 0): 
+        <?php if ($meta_diaria > 0):
             $porcentaje = min(100, round(($ventas_hoy / $meta_diaria) * 100));
-        ?>
-            <div style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 0.5rem; color: rgba(255,255,255,0.85);">
+            ?>
+            <div
+                style="display: flex; justify-content: space-between; font-size: 0.9rem; margin-bottom: 0.5rem; color: rgba(255,255,255,0.85);">
                 <span>Vendedor: <strong><?php echo htmlspecialchars($_SESSION['user']['username']); ?></strong></span>
-                <span>Progreso: <strong><?php echo $ventas_hoy; ?> / <?php echo $meta_diaria; ?> ventas</strong> (<?php echo $porcentaje; ?>%)</span>
+                <span>Progreso: <strong><?php echo $ventas_hoy; ?> / <?php echo $meta_diaria; ?> ventas</strong>
+                    (<?php echo $porcentaje; ?>%)</span>
             </div>
-            <div style="width: 100%; height: 10px; background: rgba(255, 255, 255, 0.1); border-radius: 5px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.05);">
-                <div style="width: <?php echo $porcentaje; ?>%; height: 100%; background: linear-gradient(90deg, #10b981, #34d399); border-radius: 5px; transition: width 0.5s ease;"></div>
+            <div
+                style="width: 100%; height: 10px; background: rgba(255, 255, 255, 0.1); border-radius: 5px; overflow: hidden; border: 1px solid rgba(255, 255, 255, 0.05);">
+                <div
+                    style="width: <?php echo $porcentaje; ?>%; height: 100%; background: linear-gradient(90deg, #10b981, #34d399); border-radius: 5px; transition: width 0.5s ease;">
+                </div>
             </div>
             <?php if ($ventas_hoy >= $meta_diaria): ?>
-                <div style="margin-top: 0.75rem; font-size: 0.85rem; color: var(--highlight-color); font-weight: 600; text-align: center; animation: pulse 2s infinite;">
+                <div
+                    style="margin-top: 0.75rem; font-size: 0.85rem; color: var(--highlight-color); font-weight: 600; text-align: center; animation: pulse 2s infinite;">
                     🎉 ¡Felicidades! Has alcanzado la meta diaria de ventas de hoy. 🚀
                 </div>
             <?php endif; ?>
@@ -125,39 +152,52 @@ $total_ganancia = $total_comision + $total_premio;
 
 <!-- Selector de Campaña y Charla Comercial -->
 <div class="glass-card" style="margin-bottom: 2rem; padding: 2rem;">
-    <div style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:1.5rem; gap:1rem;">
+    <div
+        style="display:flex; justify-content:space-between; align-items:center; flex-wrap:wrap; margin-bottom:1.5rem; gap:1rem;">
         <div style="display:flex; align-items:center; gap:1rem; flex-wrap:wrap;">
             <h2 class="gradient-text" style="font-size: 1.3rem; margin:0;">Charla Comercial de Campaña:</h2>
-            <select id="select_campana_charla" class="form-control" style="width: 250px; padding: 0.5rem 1rem; height: auto;">
+            <select id="select_campana_charla" class="form-control"
+                style="width: 250px; padding: 0.5rem 1rem; height: auto;">
                 <option value="">-- Seleccionar Campaña --</option>
                 <?php foreach ($campaignsList as $camp): ?>
                     <option value="<?php echo $camp->id; ?>"><?php echo htmlspecialchars($camp->nombre); ?></option>
                 <?php endforeach; ?>
             </select>
             <div id="campana_actions" style="display:none; gap:0.5rem; align-items:center;">
-                <a href="#" id="btn_edit_campana" class="btn btn-secondary action-btn" style="padding: 0.4rem 0.8rem; font-size:0.85rem;" title="Editar Campaña">
+                <a href="#" id="btn_edit_campana" class="btn btn-secondary action-btn"
+                    style="padding: 0.4rem 0.8rem; font-size:0.85rem;" title="Editar Campaña">
                     Editar
                 </a>
-                <a href="#" id="btn_delete_campana" class="btn btn-secondary btn-danger action-btn" style="padding: 0.4rem 0.8rem; font-size:0.85rem;" title="Eliminar Campaña">
+                <a href="#" id="btn_delete_campana" class="btn btn-secondary btn-danger action-btn"
+                    style="padding: 0.4rem 0.8rem; font-size:0.85rem;" title="Eliminar Campaña">
                     Eliminar
                 </a>
             </div>
         </div>
-        <button type="button" id="btn_toggle_charla" class="btn btn-secondary" style="padding: 0.4rem 0.8rem; font-size:0.85rem;">
+        <button type="button" id="btn_toggle_charla" class="btn btn-secondary"
+            style="padding: 0.4rem 0.8rem; font-size:0.85rem;">
             Ocultar Charla
         </button>
     </div>
 
     <div id="charla_script_container" style="display:none;">
         <!-- Pestañas para las 3 charlas -->
-        <div style="display:flex; gap:0.5rem; margin-bottom:1rem; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:0.5rem;">
-            <button type="button" class="tab-charla-btn active" data-tab="saludo" style="background:none; border:none; color:var(--highlight-color); font-weight:600; padding:0.5rem 1rem; cursor:pointer; border-bottom:2px solid var(--highlight-color);">1. Saludo</button>
-            <button type="button" class="tab-charla-btn" data-tab="desarrollo" style="background:none; border:none; color:rgba(255,255,255,0.6); font-weight:600; padding:0.5rem 1rem; cursor:pointer; border-bottom:2px solid transparent;">2. Desarrollo</button>
-            <button type="button" class="tab-charla-btn" data-tab="cierre" style="background:none; border:none; color:rgba(255,255,255,0.6); font-weight:600; padding:0.5rem 1rem; cursor:pointer; border-bottom:2px solid transparent;">3. Cierre</button>
+        <div
+            style="display:flex; gap:0.5rem; margin-bottom:1rem; border-bottom:1px solid rgba(255,255,255,0.08); padding-bottom:0.5rem;">
+            <button type="button" class="tab-charla-btn active" data-tab="saludo"
+                style="background:none; border:none; color:var(--highlight-color); font-weight:600; padding:0.5rem 1rem; cursor:pointer; border-bottom:2px solid var(--highlight-color);">1.
+                Saludo</button>
+            <button type="button" class="tab-charla-btn" data-tab="desarrollo"
+                style="background:none; border:none; color:rgba(255,255,255,0.6); font-weight:600; padding:0.5rem 1rem; cursor:pointer; border-bottom:2px solid transparent;">2.
+                Desarrollo</button>
+            <button type="button" class="tab-charla-btn" data-tab="cierre"
+                style="background:none; border:none; color:rgba(255,255,255,0.6); font-weight:600; padding:0.5rem 1rem; cursor:pointer; border-bottom:2px solid transparent;">3.
+                Cierre</button>
         </div>
 
         <!-- Área de texto del script -->
-        <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:1.5rem; min-height:120px; max-height:300px; overflow-y:auto; font-size:0.95rem; line-height:1.6; white-space:pre-wrap;" id="charla_text_content">
+        <div style="background:rgba(255,255,255,0.03); border:1px solid rgba(255,255,255,0.08); border-radius:8px; padding:1.5rem; min-height:120px; max-height:300px; overflow-y:auto; font-size:0.95rem; line-height:1.6; white-space:pre-wrap;"
+            id="charla_text_content">
             Seleccione una campaña para visualizar su charla de ventas.
         </div>
     </div>
@@ -292,10 +332,10 @@ $total_ganancia = $total_comision + $total_premio;
                         <th>ID Único</th>
                         <th>Nombre</th>
                         <th>Teléfono</th>
-                        <th>Ubicación y Dirección</th>
+                        <!--<th>Ubicación y Dirección</th>-->
                         <th>Estado de Llamada</th>
                         <th>Lapsos (Día/Hora)</th>
-                        <th style="width: 140px; text-align: right;">Ganancia (USD)</th>
+                        <!--<th style="width: 140px; text-align: right;">Ganancia (USD)</th>-->
                         <th style="width: 210px; text-align: center;">Acciones</th>
                     </tr>
                 </thead>
@@ -323,8 +363,7 @@ $total_ganancia = $total_comision + $total_premio;
                             </td>
                             <td style="font-weight:500;"><?php echo htmlspecialchars($c->nombre); ?></td>
                             <td><?php echo htmlspecialchars($c->telefono); ?></td>
-                            <td>
-                                <!-- Geographical location display (Paso 4) -->
+                            <!--<td>
                                 <div style="font-size: 0.85rem; color: var(--highlight-color); margin-bottom: 0.25rem;">
                                     📍 <?php
                                     $estName = $repo->getEstadoName($c->estado_id);
@@ -337,14 +376,13 @@ $total_ganancia = $total_comision + $total_premio;
                                     title="<?php echo htmlspecialchars($c->direccion); ?>">
                                     <?php echo htmlspecialchars($c->direccion); ?>
                                 </div>
-                                <!-- File attachment display (Paso 6) -->
                                 <?php if ($c->archivo_adjunto): ?>
                                     <div style="margin-top: 0.25rem; font-size: 0.8rem;">
                                         📎 <a href="<?php echo htmlspecialchars($c->archivo_adjunto); ?>" target="_blank"
                                             style="color: #a7f3d0; text-decoration: underline;"><?php echo basename($c->archivo_adjunto); ?></a>
                                     </div>
                                 <?php endif; ?>
-                            </td>
+                            </td>-->
                             <td>
                                 <span
                                     class="badge <?php echo $badgeClass; ?>"><?php echo htmlspecialchars($c->estado_llamada); ?></span>
@@ -357,9 +395,11 @@ $total_ganancia = $total_comision + $total_premio;
                                         <div>⏱️ <?php echo htmlspecialchars($c->lapso_tiempo); ?></div><?php endif; ?>
                                 </div>
                             </td>
-                            <td class="row-ganancia" style="text-align: right; font-weight: 700; color: #10b981;" data-comision="<?php echo $c->comision_aplicada; ?>" data-premio="<?php echo $c->premio_aplicado; ?>">
-                                $<?php echo number_format((double)$c->comision_aplicada + (double)$c->premio_aplicado, 2); ?>
-                            </td>
+                            <!--<td class="row-ganancia" style="text-align: right; font-weight: 700; color: #10b981;"
+                                data-comision="<?php echo $c->comision_aplicada; ?>"
+                                data-premio="<?php echo $c->premio_aplicado; ?>">
+                                $<?php echo number_format((double) $c->comision_aplicada + (double) $c->premio_aplicado, 2); ?>
+                            </td>-->
                             <td style="text-align: center;">
                                 <div class="action-buttons">
                                     <a href="clients/edit?id=<?php echo $c->id; ?>" class="btn btn-secondary action-btn"
@@ -410,9 +450,12 @@ $total_ganancia = $total_comision + $total_premio;
                     <?php endforeach; ?>
                 </tbody>
                 <tfoot>
-                    <tr style="background: rgba(70, 8, 9, 0.4); font-weight: bold; border-top: 2px solid rgba(255,255,255,0.15);">
-                        <td colspan="6" style="text-align: right; color: var(--highlight-color); padding: 1rem;">Total Ganancia Filtro:</td>
-                        <td style="text-align: right; color: #10b981; font-weight: 800; padding: 1rem;" id="table-total-ganancia">$0.00</td>
+                    <tr
+                        style="background: rgba(70, 8, 9, 0.4); font-weight: bold; border-top: 2px solid rgba(255,255,255,0.15);">
+                        <td colspan="6" style="text-align: right; color: var(--highlight-color); padding: 1rem;">Total
+                            Ganancia Filtro:</td>
+                        <td style="text-align: right; color: #10b981; font-weight: 800; padding: 1rem;"
+                            id="table-total-ganancia">$0.00</td>
                         <td></td>
                     </tr>
                 </tfoot>
@@ -1204,19 +1247,19 @@ $total_ganancia = $total_comision + $total_premio;
     })();
 
     // Campaign speech script logic
-    (function() {
-        var campaignsData = <?php 
-            $json_data = array();
-            foreach ($campaignsList as $camp) {
-                $json_data[$camp->id] = array(
-                    'id' => $camp->id,
-                    'nombre' => $camp->nombre,
-                    'saludo' => $camp->charla_saludo,
-                    'desarrollo' => $camp->charla_desarrollo,
-                    'cierre' => $camp->charla_cierre
-                );
-            }
-            echo json_encode($json_data);
+    (function () {
+        var campaignsData = <?php
+        $json_data = array();
+        foreach ($campaignsList as $camp) {
+            $json_data[$camp->id] = array(
+                'id' => $camp->id,
+                'nombre' => $camp->nombre,
+                'saludo' => $camp->charla_saludo,
+                'desarrollo' => $camp->charla_desarrollo,
+                'cierre' => $camp->charla_cierre
+            );
+        }
+        echo json_encode($json_data);
         ?>;
 
         var selectCampana = document.getElementById('select_campana_charla');
@@ -1238,7 +1281,7 @@ $total_ganancia = $total_comision + $total_premio;
             handleCampaignChange(storedCampId);
         }
 
-        selectCampana.addEventListener('change', function() {
+        selectCampana.addEventListener('change', function () {
             var campId = this.value;
             localStorage.setItem('selected_campana_id', campId);
             handleCampaignChange(campId);
@@ -1256,7 +1299,7 @@ $total_ganancia = $total_comision + $total_premio;
             campanaActions.style.display = 'inline-flex';
             btnEdit.href = 'campaigns/edit?id=' + campId;
             btnDelete.href = 'campaigns/delete?id=' + campId;
-            btnDelete.onclick = function() {
+            btnDelete.onclick = function () {
                 return confirm('¿Está seguro de que desea eliminar la campaña "' + campaignsData[campId].nombre + '"?');
             };
 
@@ -1266,7 +1309,7 @@ $total_ganancia = $total_comision + $total_premio;
             updateTabText();
         }
 
-        btnToggleCharla.addEventListener('click', function() {
+        btnToggleCharla.addEventListener('click', function () {
             showCharla = !showCharla;
             if (showCharla) {
                 if (selectedCampaignId) {
@@ -1279,9 +1322,9 @@ $total_ganancia = $total_comision + $total_premio;
             }
         });
 
-        tabBtns.forEach(function(btn) {
-            btn.addEventListener('click', function() {
-                tabBtns.forEach(function(b) {
+        tabBtns.forEach(function (btn) {
+            btn.addEventListener('click', function () {
+                tabBtns.forEach(function (b) {
                     b.classList.remove('active');
                     b.style.color = 'rgba(255,255,255,0.6)';
                     b.style.borderBottomColor = 'transparent';
@@ -1289,7 +1332,7 @@ $total_ganancia = $total_comision + $total_premio;
                 btn.classList.add('active');
                 btn.style.color = 'var(--highlight-color)';
                 btn.style.borderBottomColor = 'var(--highlight-color)';
-                
+
                 activeTab = btn.getAttribute('data-tab');
                 updateTabText();
             });
@@ -1311,7 +1354,7 @@ $total_ganancia = $total_comision + $total_premio;
     })();
 
     // Meta Diaria widget toggle & config
-    (function() {
+    (function () {
         var btnToggleMeta = document.getElementById('btn-toggle-meta');
         var metaContent = document.getElementById('meta-diaria-content');
         if (btnToggleMeta && metaContent) {
@@ -1320,7 +1363,7 @@ $total_ganancia = $total_comision + $total_premio;
                 metaContent.style.display = 'none';
                 btnToggleMeta.textContent = 'Mostrar Progreso';
             }
-            btnToggleMeta.addEventListener('click', function() {
+            btnToggleMeta.addEventListener('click', function () {
                 if (metaContent.style.display === 'none') {
                     metaContent.style.display = 'block';
                     btnToggleMeta.textContent = 'Ocultar Progreso';
@@ -1334,99 +1377,105 @@ $total_ganancia = $total_comision + $total_premio;
         }
 
         <?php if ($isAdmin): ?>
-        var btnConfigMeta = document.getElementById('btn-config-meta');
-        var metaConfigModal = document.getElementById('metaConfigModal');
-        var btnCloseMetaModal = document.getElementById('btn-close-meta-modal');
-        var formConfigMeta = document.getElementById('form-config-meta');
-        
-        if (btnConfigMeta && metaConfigModal) {
-            btnConfigMeta.addEventListener('click', function(e) {
-                e.preventDefault();
-                e.stopPropagation();
-                metaConfigModal.style.display = 'flex';
-            });
-        }
-        if (btnCloseMetaModal && metaConfigModal) {
-            btnCloseMetaModal.addEventListener('click', function() {
-                metaConfigModal.style.display = 'none';
-            });
-        }
-        if (formConfigMeta) {
-            formConfigMeta.addEventListener('submit', function(e) {
-                e.preventDefault();
-                
-                var fecha = document.getElementById('meta_fecha').value;
-                var vendedor_id = document.getElementById('meta_vendedor').value;
-                var cantidad_meta = document.getElementById('meta_cantidad').value;
-                
-                var params = 'fecha=' + encodeURIComponent(fecha) + 
-                             '&vendedor_id=' + encodeURIComponent(vendedor_id) + 
-                             '&cantidad_meta=' + encodeURIComponent(cantidad_meta);
-                             
-                fetch(APP_BASE_URL + 'api/metas/save', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/x-www-form-urlencoded'
-                    },
-                    body: params
-                })
-                .then(function(res) { return res.json(); })
-                .then(function(data) {
-                    if (data.status === 'success') {
-                        alert('¡Meta diaria configurada exitosamente!');
-                        metaConfigModal.style.display = 'none';
-                        window.location.reload();
-                    } else {
-                        alert('Error: ' + data.message);
-                    }
-                })
-                .catch(function(err) {
-                    console.error(err);
-                    alert('Error al conectar con el servidor.');
+            var btnConfigMeta = document.getElementById('btn-config-meta');
+            var metaConfigModal = document.getElementById('metaConfigModal');
+            var btnCloseMetaModal = document.getElementById('btn-close-meta-modal');
+            var formConfigMeta = document.getElementById('form-config-meta');
+
+            if (btnConfigMeta && metaConfigModal) {
+                btnConfigMeta.addEventListener('click', function (e) {
+                    e.preventDefault();
+                    e.stopPropagation();
+                    metaConfigModal.style.display = 'flex';
                 });
-            });
-        }
+            }
+            if (btnCloseMetaModal && metaConfigModal) {
+                btnCloseMetaModal.addEventListener('click', function () {
+                    metaConfigModal.style.display = 'none';
+                });
+            }
+            if (formConfigMeta) {
+                formConfigMeta.addEventListener('submit', function (e) {
+                    e.preventDefault();
+
+                    var fecha = document.getElementById('meta_fecha').value;
+                    var vendedor_id = document.getElementById('meta_vendedor').value;
+                    var cantidad_meta = document.getElementById('meta_cantidad').value;
+
+                    var params = 'fecha=' + encodeURIComponent(fecha) +
+                        '&vendedor_id=' + encodeURIComponent(vendedor_id) +
+                        '&cantidad_meta=' + encodeURIComponent(cantidad_meta);
+
+                    fetch(APP_BASE_URL + 'api/metas/save', {
+                        method: 'POST',
+                        headers: {
+                            'Content-Type': 'application/x-www-form-urlencoded'
+                        },
+                        body: params
+                    })
+                        .then(function (res) { return res.json(); })
+                        .then(function (data) {
+                            if (data.status === 'success') {
+                                alert('¡Meta diaria configurada exitosamente!');
+                                metaConfigModal.style.display = 'none';
+                                window.location.reload();
+                            } else {
+                                alert('Error: ' + data.message);
+                            }
+                        })
+                        .catch(function (err) {
+                            console.error(err);
+                            alert('Error al conectar con el servidor.');
+                        });
+                });
+            }
         <?php endif; ?>
     })();
 </script>
 
 <?php if ($isAdmin): ?>
-<!-- Modal para Configurar Meta Diaria -->
-<div id="metaConfigModal" class="modal-overlay" style="display:none; justify-content:center; align-items:center;">
-    <div class="glass-card" style="max-width: 450px; width: 100%; border: 1px solid var(--highlight-color); background: rgba(30, 8, 9, 0.95); position: relative; z-index: 10000;">
-        <h3 class="gradient-text" style="margin-top: 0; display: flex; align-items: center; gap: 0.5rem;">
-            🏆 Configurar Meta Diaria
-        </h3>
-        <p style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-bottom: 1.5rem;">
-            Establezca el objetivo de ventas diarias para cada vendedor en una fecha específica.
-        </p>
-        
-        <form id="form-config-meta">
-            <div class="form-group">
-                <label class="form-label" for="meta_fecha">Fecha *</label>
-                <input type="date" id="meta_fecha" class="form-control" value="<?php echo date('Y-m-d'); ?>" required style="padding:0.65rem 1rem;">
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label" for="meta_vendedor">Vendedor / Vendedora *</label>
-                <select id="meta_vendedor" class="form-control" required style="background: #1c0607; color: #fff; padding:0.65rem 1rem;">
-                    <option value="">-- Seleccionar --</option>
-                    <?php foreach ($sellers as $seller): ?>
-                        <option value="<?php echo $seller['id']; ?>"><?php echo htmlspecialchars($seller['username']); ?></option>
-                    <?php endforeach; ?>
-                </select>
-            </div>
-            
-            <div class="form-group">
-                <label class="form-label" for="meta_cantidad">Meta de Ventas (Cantidad) *</label>
-                <input type="number" id="meta_cantidad" class="form-control" min="0" required value="5" style="padding:0.65rem 1rem;">
-            </div>
-            
-            <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
-                <button type="button" id="btn-close-meta-modal" class="btn btn-secondary" style="padding:0.5rem 1rem;">Cancelar</button>
-                <button type="submit" class="btn btn-primary" style="padding:0.5rem 1rem;">Guardar Meta</button>
-            </div>
-        </form>
+    <!-- Modal para Configurar Meta Diaria -->
+    <div id="metaConfigModal" class="modal-overlay" style="display:none; justify-content:center; align-items:center;">
+        <div class="glass-card"
+            style="max-width: 450px; width: 100%; border: 1px solid var(--highlight-color); background: rgba(30, 8, 9, 0.95); position: relative; z-index: 10000;">
+            <h3 class="gradient-text" style="margin-top: 0; display: flex; align-items: center; gap: 0.5rem;">
+                🏆 Configurar Meta Diaria
+            </h3>
+            <p style="font-size: 0.85rem; color: rgba(255,255,255,0.6); margin-bottom: 1.5rem;">
+                Establezca el objetivo de ventas diarias para cada vendedor en una fecha específica.
+            </p>
+
+            <form id="form-config-meta">
+                <div class="form-group">
+                    <label class="form-label" for="meta_fecha">Fecha *</label>
+                    <input type="date" id="meta_fecha" class="form-control" value="<?php echo date('Y-m-d'); ?>" required
+                        style="padding:0.65rem 1rem;">
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="meta_vendedor">Vendedor / Vendedora *</label>
+                    <select id="meta_vendedor" class="form-control" required
+                        style="background: #1c0607; color: #fff; padding:0.65rem 1rem;">
+                        <option value="">-- Seleccionar --</option>
+                        <?php foreach ($sellers as $seller): ?>
+                            <option value="<?php echo $seller['id']; ?>"><?php echo htmlspecialchars($seller['username']); ?>
+                            </option>
+                        <?php endforeach; ?>
+                    </select>
+                </div>
+
+                <div class="form-group">
+                    <label class="form-label" for="meta_cantidad">Meta de Ventas (Cantidad) *</label>
+                    <input type="number" id="meta_cantidad" class="form-control" min="0" required value="5"
+                        style="padding:0.65rem 1rem;">
+                </div>
+
+                <div style="display: flex; gap: 1rem; justify-content: flex-end; margin-top: 2rem;">
+                    <button type="button" id="btn-close-meta-modal" class="btn btn-secondary"
+                        style="padding:0.5rem 1rem;">Cancelar</button>
+                    <button type="submit" class="btn btn-primary" style="padding:0.5rem 1rem;">Guardar Meta</button>
+                </div>
+            </form>
+        </div>
     </div>
-</div>
 <?php endif; ?>
